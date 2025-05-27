@@ -1,0 +1,331 @@
+  return (
+    <View style={styles.container}>
+      {/* Header with back button and title */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="white" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Select Location</Text>
+      </View>
+
+      {/* Map View */}
+      <MapView
+        provider={PROVIDER_GOOGLE}
+        style={styles.map}
+        region={region}
+        onRegionChangeStart={onRegionChangeStart}
+        onRegionChangeComplete={onRegionChangeComplete}
+        showsUserLocation={true}
+        onPress={(e) => {
+          // Set marker at tapped location
+          const { latitude, longitude } = e.nativeEvent.coordinate;
+          
+          // Mark as explicitly selected by user through tap
+          setLocationSelectedByUser(true);
+          setMarkerPosition({ latitude, longitude });
+          setRegion({
+            ...region,
+            latitude,
+            longitude
+          });
+          
+          // Update address based on new coordinates
+          reverseGeocode(latitude, longitude);
+        }}
+      >
+        <Marker
+          coordinate={markerPosition}
+          draggable
+          onDragEnd={handleMarkerDragEnd}
+        />
+      </MapView>
+
+      {/* Current position button */}
+      <TouchableOpacity
+        style={styles.currentPositionButton}
+        onPress={getMyLocation}
+      >
+        <Ionicons name="locate" size={24} color="#0066cc" />
+      </TouchableOpacity>
+      
+      {/* Loading indicator */}
+      {isLoading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0066cc" />
+          <Text style={styles.loadingText}>Finding your location...</Text>
+        </View>
+      )}
+      
+      {/* Bottom panel with search and confirm */}
+      <KeyboardAvoidingView
+        style={styles.bottomPanel}
+        behavior={Platform.OS === 'ios' ? 'padding' : null}
+      >
+        {/* Search bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputContainer}>
+            <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search for a location..."
+              value={searchQuery}
+              onChangeText={(text) => {
+                setSearchQuery(text);
+                getLocationSuggestions(text);
+              }}
+              onSubmitEditing={handleSearchSubmit}
+              returnKeyType="search"
+            />
+            {searchQuery ? (
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={() => {
+                  setSearchQuery('');
+                  setShowSuggestions(false);
+                  setLocationSuggestions([]);
+                }}
+              >
+                <Ionicons name="close-circle" size={20} color="#999" />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+          <TouchableOpacity
+            style={styles.searchButton}
+            onPress={handleSearchSubmit}
+          >
+            <Ionicons name="search" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+        
+        {/* Location suggestions */}
+        {showSuggestions && locationSuggestions.length > 0 && (
+          <ScrollView style={styles.suggestionsContainer}>
+            {locationSuggestions.map((suggestion) => (
+              <TouchableOpacity
+                key={suggestion.id}
+                style={styles.suggestionItem}
+                onPress={() => handleSuggestionSelect(suggestion)}
+              >
+                <View style={styles.suggestionContent}>
+                  {suggestion.isLoading ? (
+                    <ActivityIndicator size="small" color="#0066cc" style={styles.suggestionIcon} />
+                  ) : (
+                    <Ionicons name="location" size={18} color="#0066cc" style={styles.suggestionIcon} />
+                  )}
+                  <View style={styles.suggestionText}>
+                    <Text style={styles.suggestionTitle} numberOfLines={1}>{suggestion.name}</Text>
+                    <Text style={styles.suggestionAddress} numberOfLines={2}>{suggestion.address}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+        
+        {/* Location information */}
+        {selectedLocation && !showSuggestions && (
+          <View style={styles.locationInfoContainer}>
+            <Text style={styles.locationInfoTitle}>Selected Location</Text>
+            <Text style={styles.locationInfoAddress}>{address.address}</Text>
+            <Text style={styles.locationInfoDetails}>
+              {[address.city, address.state, address.country].filter(Boolean).join(', ')}
+            </Text>
+          </View>
+        )}
+        
+        {/* Confirm button */}
+        <TouchableOpacity
+          style={styles.confirmButton}
+          onPress={saveLocation}
+        >
+          <Text style={styles.confirmButtonText}>Confirm Location</Text>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0066cc',
+    paddingTop: 40, // To account for status bar
+    paddingBottom: 10,
+    paddingHorizontal: 10,
+    elevation: 4,
+    zIndex: 10,
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '500',
+    marginLeft: 10,
+  },
+  map: {
+    flex: 1,
+  },
+  currentPositionButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 250,
+    backgroundColor: 'white',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#0066cc',
+  },
+  bottomPanel: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'white',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginRight: 8,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    fontSize: 16,
+    color: '#333',
+  },
+  clearButton: {
+    padding: 4,
+  },
+  searchButton: {
+    backgroundColor: '#0066cc',
+    borderRadius: 8,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  suggestionsContainer: {
+    maxHeight: 220,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  suggestionItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  suggestionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  suggestionIcon: {
+    marginRight: 12,
+  },
+  suggestionText: {
+    flex: 1,
+  },
+  suggestionTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  suggestionAddress: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 2,
+  },
+  locationInfoContainer: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  locationInfoTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#666',
+    marginBottom: 4,
+  },
+  locationInfoAddress: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 2,
+  },
+  locationInfoDetails: {
+    fontSize: 14,
+    color: '#666',
+  },
+  confirmButton: {
+    backgroundColor: '#0066cc',
+    borderRadius: 8,
+    paddingVertical: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  confirmButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+});
+
+export default LocationPickerScreen;

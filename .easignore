@@ -1,0 +1,5 @@
+# Ignore backend folder and all its contents
+../backend/
+# Ignore any git or unnecessary files
+.git/
+node_modules/

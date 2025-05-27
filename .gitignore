@@ -1,0 +1,12 @@
+node_modules/
+.expo/
+.expo-shared/
+dist/
+web-build/
+build/
+*.apk
+*.aab
+*.log
+*.lock
+.env
+.vscode/

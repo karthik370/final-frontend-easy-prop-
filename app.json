@@ -1,0 +1,61 @@
+{
+  "expo": {
+    "name": "easy-realestate-app",
+    "slug": "easy-realestate-app",
+    "owner": "latha370",
+    "version": "1.0.0",
+    "sdkVersion": "48.0.0",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "extra": {
+      "googleMapsApiKey": "AIzaSyDxKc0KJqZ_IRh_DRqiABPp9bVVy93Z5G0",
+      "firebase": {
+        "apiKey": "AIzaSyB7Ajg2O5C0Af1fJ6mGEeUcE2_LgkGMKL0",
+        "authDomain": "olx-clone-73fb2.firebaseapp.com",
+        "projectId": "olx-clone-73fb2",
+        "storageBucket": "olx-clone-73fb2.appspot.com",
+        "messagingSenderId": "234981884374",
+        "appId": "1:234981884374:web:1ea69aefc53465dac39a6c"
+      },
+      "eas": {
+        "projectId": "c0095631-3a70-430d-8009-efb6f9e96eb6"
+      }
+    },
+    "android": {
+      "package": "com.latha370.esayrealestate",
+      "versionCode": 1,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDxKc0KJqZ_IRh_DRqiABPp9bVVy93Z5G0"
+        }
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.latha370.esayrealestate",
+      "buildNumber": "1.0.0",
+      "config": {
+        "googleMapsApiKey": "AIzaSyDxKc0KJqZ_IRh_DRqiABPp9bVVy93Z5G0"
+      }
+    }
+  }
+}

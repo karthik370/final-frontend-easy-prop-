@@ -2,7 +2,7 @@
   "expo": {
     "name": "easy-realestate-app",
     "slug": "easy-realestate-app",
-    "owner": "latha370",
+    "owner": "karthi370",
     "version": "1.0.0",
     "sdkVersion": "48.0.0",
     "platforms": [
@@ -10,9 +10,9 @@
       "android"
     ],
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": null,
     "splash": {
-      "image": "./assets/splash.png",
+      "image": null,
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -23,7 +23,7 @@
       "**/*"
     ],
     "extra": {
-      "googleMapsApiKey": "AIzaSyDxKc0KJqZ_IRh_DRqiABPp9bVVy93Z5G0",
+      "googleMapsApiKey": "AIzaSyA_Dun255HHND3b_lX5N05zvGT77NhDeCI",
       "firebase": {
         "apiKey": "AIzaSyB7Ajg2O5C0Af1fJ6mGEeUcE2_LgkGMKL0",
         "authDomain": "olx-clone-73fb2.firebaseapp.com",
@@ -33,15 +33,15 @@
         "appId": "1:234981884374:web:1ea69aefc53465dac39a6c"
       },
       "eas": {
-        "projectId": "c0095631-3a70-430d-8009-efb6f9e96eb6"
+        "projectId": "cf3a8c22-a8fd-45df-99b0-c86ee5c196ff"
       }
     },
     "android": {
-      "package": "com.latha370.esayrealestate",
+      "package": "com.karthi370.esayrealestate",
       "versionCode": 1,
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyDxKc0KJqZ_IRh_DRqiABPp9bVVy93Z5G0"
+          "apiKey": "AIzaSyA_Dun255HHND3b_lX5N05zvGT77NhDeCI"
         }
       },
       "permissions": [
@@ -51,10 +51,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.latha370.esayrealestate",
+      "bundleIdentifier": "com.karthi370.esayrealestate",
       "buildNumber": "1.0.0",
       "config": {
-        "googleMapsApiKey": "AIzaSyDxKc0KJqZ_IRh_DRqiABPp9bVVy93Z5G0"
+        "googleMapsApiKey": "AIzaSyA_Dun255HHND3b_lX5N05zvGT77NhDeCI"
       }
     }
   }

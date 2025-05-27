@@ -20,7 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
 // Google Maps API Key
-const GOOGLE_MAPS_API_KEY = "AIzaSyDxKc0KJqZ_IRh_DRqiABPp9bVVy93Z5G0";
+const GOOGLE_MAPS_API_KEY = "AIzaSyA_Dun255HHND3b_lX5N05zvGT77NhDeCI";
 
 export default function LocationPickerScreen({ route, navigation }) {
   const { onSelectLocation = () => {} } = route.params || {};

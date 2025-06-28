@@ -1,46 +1,29 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-// Screens
 import SearchScreen from '../../screens/SearchScreen';
-import PropertyDetailsScreen from '../../screens/PropertyDetailsScreen';
 import FilterScreen from '../../screens/FilterScreen';
-import ViewMapScreen from '../../screens/ViewMapScreen';
+import PropertyDetailsScreen from '../../screens/PropertyDetailsScreen';
 
 const Stack = createNativeStackNavigator();
 
 const SearchStack = () => {
   return (
     <Stack.Navigator
+      initialRouteName="Search"
       screenOptions={{
-        headerStyle: {
-          backgroundColor: '#0066cc',
-        },
-        headerTintColor: '#fff',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
+        headerShown: false,
       }}
     >
-      <Stack.Screen 
-        name="Search" 
-        component={SearchScreen} 
-        options={{ title: 'Search Properties' }}
-      />
+      <Stack.Screen name="Search" component={SearchScreen} />
+      <Stack.Screen name="FilterScreen" component={FilterScreen} />
       <Stack.Screen 
         name="SearchPropertyDetails" 
         component={PropertyDetailsScreen} 
-        options={{ title: 'Property Details' }}
-      />
-      <Stack.Screen 
-        name="Filter" 
-        component={FilterScreen} 
-        options={{ title: 'Filter Properties' }}
-      />
-      <Stack.Screen 
-        name="SearchViewMap" 
-        component={ViewMapScreen} 
-        options={{ title: 'Map View' }}
+        options={{ 
+          headerShown: true,
+          title: 'Property Details' 
+        }} 
       />
     </Stack.Navigator>
   );

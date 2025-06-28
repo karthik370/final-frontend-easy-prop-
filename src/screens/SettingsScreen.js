@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { SERVER_URL } from '../config/ip-config';
+import { CommonActions } from '@react-navigation/native';
 
 const SettingsScreen = ({ navigation }) => {
   const { userToken, user, logout } = useContext(AuthContext);
@@ -22,7 +23,6 @@ const SettingsScreen = ({ navigation }) => {
   // App Settings
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(true);
-  const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const [locationTrackingEnabled, setLocationTrackingEnabled] = useState(true);
   const [saveSearchHistory, setSaveSearchHistory] = useState(true);
   
@@ -44,7 +44,6 @@ const SettingsScreen = ({ navigation }) => {
         const settings = JSON.parse(storedSettings);
         setNotificationsEnabled(settings.notificationsEnabled !== undefined ? settings.notificationsEnabled : true);
         setEmailAlertsEnabled(settings.emailAlertsEnabled !== undefined ? settings.emailAlertsEnabled : true);
-        setDarkModeEnabled(settings.darkModeEnabled !== undefined ? settings.darkModeEnabled : false);
         setLocationTrackingEnabled(settings.locationTrackingEnabled !== undefined ? settings.locationTrackingEnabled : true);
         setSaveSearchHistory(settings.saveSearchHistory !== undefined ? settings.saveSearchHistory : true);
         
@@ -87,7 +86,6 @@ const SettingsScreen = ({ navigation }) => {
       const settings = {
         notificationsEnabled,
         emailAlertsEnabled,
-        darkModeEnabled,
         locationTrackingEnabled,
         saveSearchHistory,
         showPhoneNumber,
@@ -121,10 +119,10 @@ const SettingsScreen = ({ navigation }) => {
     }
   };
 
-  const clearSearchHistory = async () => {
+  const clearSearchHistory = () => {
     Alert.alert(
       'Clear Search History',
-      'Are you sure you want to clear your search history? This action cannot be undone.',
+      'Are you sure you want to clear your search history?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -133,18 +131,24 @@ const SettingsScreen = ({ navigation }) => {
           onPress: async () => {
             setIsLoading(true);
             try {
+              // Clear search history from AsyncStorage
               await AsyncStorage.removeItem('searchHistory');
               
+              // If logged in, clear from API too
               if (userToken) {
                 try {
-                  await axios.delete(`${SERVER_URL}/api/users/search-history`);
+                  await axios.delete(`${SERVER_URL}/api/users/search-history`, {
+                    headers: {
+                      Authorization: `Bearer ${userToken}`,
+                    },
+                  });
                 } catch (error) {
-                  console.log('Error clearing search history on API:', error);
+                  console.log('Error clearing search history from API:', error);
                 }
               }
               
               setIsLoading(false);
-              Alert.alert('Success', 'Search history cleared successfully');
+              Alert.alert('Success', 'Search history cleared');
             } catch (error) {
               console.log('Error clearing search history:', error);
               setIsLoading(false);
@@ -169,10 +173,26 @@ const SettingsScreen = ({ navigation }) => {
             setIsLoading(true);
             try {
               if (userToken) {
-                await axios.delete(`${SERVER_URL}/api/users`);
-                // Clear local storage and logout
+                await axios.delete(`${SERVER_URL}/api/users`, {
+                  headers: {
+                    Authorization: `Bearer ${userToken}`,
+                  },
+                });
+                
+                // Clear local storage
                 await AsyncStorage.clear();
+                
+                // Navigate to welcome screen first, then logout
+                navigation.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: 'Welcome' }],
+                  })
+                );
+                
+                // Logout after navigation
                 logout();
+                
                 Alert.alert('Account Deleted', 'Your account has been successfully deleted');
               }
               setIsLoading(false);
@@ -253,13 +273,6 @@ const SettingsScreen = ({ navigation }) => {
           value={emailAlertsEnabled}
           onValueChange={setEmailAlertsEnabled}
         />
-        
-        <SettingToggle
-          title="Dark Mode"
-          subtitle="Switch to dark theme (requires app restart)"
-          value={darkModeEnabled}
-          onValueChange={setDarkModeEnabled}
-        />
       </View>
 
       {/* Privacy Settings */}
@@ -315,12 +328,6 @@ const SettingsScreen = ({ navigation }) => {
             />
             
             <SettingAction
-              title="Change Password"
-              subtitle="Update your account password"
-              onPress={() => navigation.navigate('ChangePassword')}
-            />
-            
-            <SettingAction
               title="Delete Account"
               subtitle="Permanently remove your account and all data"
               iconName="warning-outline"
@@ -337,13 +344,13 @@ const SettingsScreen = ({ navigation }) => {
         <SettingAction
           title="Help Center"
           subtitle="FAQs and troubleshooting guides"
-          onPress={() => navigation.navigate('HelpCenter')}
+          onPress={() => navigation.navigate('HelpSupport')}
         />
         
         <SettingAction
           title="Contact Support"
           subtitle="Get help from our support team"
-          onPress={() => navigation.navigate('ContactSupport')}
+          onPress={() => navigation.navigate('HelpSupport')}
         />
         
         <SettingAction
@@ -358,9 +365,11 @@ const SettingsScreen = ({ navigation }) => {
           onPress={() => navigation.navigate('PrivacyPolicy')}
         />
         
-        <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>Version 1.0.0</Text>
-        </View>
+        <SettingAction
+          title="About App"
+          subtitle="Learn more about our application"
+          onPress={() => navigation.navigate('AboutApp')}
+        />
       </View>
 
       {/* Save Button */}

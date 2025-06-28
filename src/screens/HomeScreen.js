@@ -32,7 +32,7 @@ const HomeScreen = ({ navigation }) => {
       setIsLoading(true);
       setError(null);
       console.log(`Fetching properties from: ${SERVER_URL}/api/properties`);
-      
+
       const response = await axios.get(`${SERVER_URL}/api/properties`, {
         timeout: 30000, // 30 seconds timeout
         headers: {
@@ -40,9 +40,9 @@ const HomeScreen = ({ navigation }) => {
           'Accept': 'application/json'
         }
       });
-      
+
       console.log('API Response status:', response.status);
-      
+
       if (response.data && Array.isArray(response.data)) {
         console.log('Properties fetched successfully:', response.data.length);
         setProperties(response.data);
@@ -58,12 +58,12 @@ const HomeScreen = ({ navigation }) => {
     } catch (error) {
       console.error('Error fetching properties:', error);
       console.error('Error details:', error.response ? error.response.data : 'No response data');
-      
+
       let errorMessage = 'Could not fetch properties from the server.';
       if (error.code === 'ECONNABORTED') {
         errorMessage = 'Error loading properties: timeout of 30000ms exceeded. Check your network connection and API server.';
       }
-      
+
       setError(errorMessage);
       setProperties([]);
     } finally {
@@ -77,7 +77,7 @@ const HomeScreen = ({ navigation }) => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Convert UI category to backend category (Buy → Sell)
       let categoryParam = '';
       if (category === 'Buy') {
@@ -85,7 +85,7 @@ const HomeScreen = ({ navigation }) => {
       } else if (category === 'Rent') {
         categoryParam = 'Rent';
       }
-      
+
       const requestConfig = {
         timeout: 30000, // 30 seconds timeout
         headers: {
@@ -93,15 +93,15 @@ const HomeScreen = ({ navigation }) => {
           'Accept': 'application/json'
         }
       };
-      
+
       // Special handling for PG/Hostels category
       if (category === 'PG') {
         try {
           console.log(`Fetching PG properties from: ${SERVER_URL}/api/properties/pg`);
           const response = await axios.get(`${SERVER_URL}/api/properties/pg`, requestConfig);
-          
+
           console.log('PG API Response status:', response.status);
-          
+
           if (response.data && Array.isArray(response.data)) {
             console.log('PG properties fetched successfully:', response.data.length);
             setProperties(response.data);
@@ -110,7 +110,7 @@ const HomeScreen = ({ navigation }) => {
           } else {
             // Special handling for PG response format error
             console.error('Unexpected PG response format:', response.data);
-            
+
             // If the response is an object but not an array, try to extract properties from it
             if (response.data && typeof response.data === 'object') {
               try {
@@ -129,7 +129,7 @@ const HomeScreen = ({ navigation }) => {
                     owner: response.data.owner || {},
                     createdAt: response.data.createdAt || new Date().toISOString()
                   }];
-                  
+
                   setProperties(pgArray);
                   console.log('Converted PG object to array format');
                 } else {
@@ -148,12 +148,12 @@ const HomeScreen = ({ navigation }) => {
           console.error('Error fetching PG properties:', error);
           console.error('Error details:', error.response ? error.response.data : 'No response data');
           setProperties([]);
-          
+
           let errorMessage = 'Failed to load PG/Hostel properties';
           if (error.code === 'ECONNABORTED') {
             errorMessage = 'Error loading properties: timeout of 30000ms exceeded. Check your network connection and API server.';
           }
-          
+
           setError(errorMessage);
         }
       } else if (category !== 'All') {
@@ -161,9 +161,9 @@ const HomeScreen = ({ navigation }) => {
         try {
           console.log(`Fetching ${category} properties from: ${SERVER_URL}/api/properties?category=${categoryParam}`);
           const response = await axios.get(`${SERVER_URL}/api/properties?category=${categoryParam}`, requestConfig);
-          
+
           console.log(`${category} API Response status:`, response.status);
-          
+
           if (response.data && Array.isArray(response.data)) {
             console.log(`${category} properties fetched successfully:`, response.data.length);
             setProperties(response.data);
@@ -178,12 +178,12 @@ const HomeScreen = ({ navigation }) => {
           console.error(`Error fetching ${category} properties:`, error);
           console.error('Error details:', error.response ? error.response.data : 'No response data');
           setProperties([]);
-          
+
           let errorMessage = `Failed to load ${category} properties`;
           if (error.code === 'ECONNABORTED') {
             errorMessage = 'Error loading properties: timeout of 30000ms exceeded. Check your network connection and API server.';
           }
-          
+
           setError(errorMessage);
         }
       } else {
@@ -203,12 +203,12 @@ const HomeScreen = ({ navigation }) => {
   // Initial data fetch
   useEffect(() => {
     loadFilteredProperties();
-    
+
     // Add event listener for when the app comes back to foreground
     const unsubscribe = navigation.addListener('focus', () => {
       loadFilteredProperties();
     });
-    
+
     return unsubscribe;
   }, [loadFilteredProperties, navigation]);
 
@@ -220,19 +220,19 @@ const HomeScreen = ({ navigation }) => {
 
   // Navigate to category-specific properties
   const navigateToCategoryProperties = (selectedCategory) => {
-    navigation.navigate('PropertyListing', { 
+    navigation.navigate('PropertyListing', {
       category: selectedCategory,
-      title: selectedCategory === 'Buy' 
-        ? 'Properties for Sale' 
-        : selectedCategory === 'Rent' 
-          ? 'Properties for Rent' 
+      title: selectedCategory === 'Buy'
+        ? 'Properties for Sale'
+        : selectedCategory === 'Rent'
+          ? 'Properties for Rent'
           : 'PG/Hostels'
     });
   };
 
   // Navigate to map view
   const navigateToMapView = () => {
-    navigation.navigate('ViewMap', { 
+    navigation.navigate('ViewMap', {
       category: category,
       viewMode: 'map'
     });
@@ -245,23 +245,26 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header with App Title */}
-      <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.appTitle}>Easy RealEstate</Text>
-          <Text style={styles.tagline}>Find your dream property</Text>
-        </View>
-      </View>
-
-      {/* Category Buttons - Larger Size */}
+      {/* Category Buttons at the Top */}
       <View style={styles.categoryContainer}>
         <View style={styles.categoryRow}>
+
+        <TouchableOpacity
+            style={styles.serviceButton}
+            onPress={navigateToMapView}
+          >
+            <View style={styles.serviceIcon}>
+              <Ionicons name="location" size={40} color="#0066cc" />
+            </View>
+            <Text style={styles.serviceText}>Nearby Properties</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.categoryButton}
             onPress={() => navigateToCategoryProperties('Buy')}
           >
             <View style={[styles.categoryIcon, { backgroundColor: '#4CAF50' }]}>
-              <Ionicons name="home" size={24} color="#fff" />
+              <Ionicons name="home" size={28} color="#fff" />
             </View>
             <Text style={styles.categoryTitle}>Buy Properties</Text>
             <Text style={styles.categorySubtitle}>Find properties</Text>
@@ -272,7 +275,7 @@ const HomeScreen = ({ navigation }) => {
             onPress={() => navigateToCategoryProperties('Rent')}
           >
             <View style={[styles.categoryIcon, { backgroundColor: '#2196F3' }]}>
-              <Ionicons name="key" size={24} color="#fff" />
+              <Ionicons name="key" size={28} color="#fff" />
             </View>
             <Text style={styles.categoryTitle}>Search for Rent</Text>
             <Text style={styles.categorySubtitle}>Explore rentals</Text>
@@ -283,7 +286,7 @@ const HomeScreen = ({ navigation }) => {
             onPress={() => navigateToCategoryProperties('PG')}
           >
             <View style={[styles.categoryIcon, { backgroundColor: '#FF9800' }]}>
-              <Ionicons name="bed" size={24} color="#fff" />
+              <Ionicons name="bed" size={28} color="#fff" />
             </View>
             <Text style={styles.categoryTitle}>PGs/Hostels</Text>
             <Text style={styles.categorySubtitle}>Find accommodation</Text>
@@ -292,7 +295,7 @@ const HomeScreen = ({ navigation }) => {
       </View>
 
       {/* Properties Section */}
-      <View style={styles.featuredPropertiesContainer}>
+      <View style={[styles.featuredPropertiesContainer, { flex: 2, minHeight: 350 }]}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Featured Properties</Text>
           <TouchableOpacity onPress={() => navigation.navigate('PropertyListing')}>
@@ -310,7 +313,7 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.errorContainer}>
             <Ionicons name="alert-circle-outline" size={64} color="#ff6b6b" />
             <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.retryButton}
               onPress={onRefresh}
             >
@@ -324,7 +327,7 @@ const HomeScreen = ({ navigation }) => {
             <Text style={styles.emptySubtext}>
               There are no properties available at the moment.
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.refreshButton}
               onPress={onRefresh}
             >
@@ -335,7 +338,7 @@ const HomeScreen = ({ navigation }) => {
           <FlatList
             data={properties.slice(0, 5)} // Show only first 5 properties on home screen
             renderItem={({ item }) => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.propertyCard}
                 onPress={() => navigation.navigate('PropertyDetails', { property: item })}
               >
@@ -352,17 +355,17 @@ const HomeScreen = ({ navigation }) => {
                   />
                   <View style={styles.propertyCategory}>
                     <Text style={styles.propertyCategoryText}>
-                      {item.category === 'Sell' ? 'For Sale' : 
-                       item.category === 'Rent' ? 'For Rent' : 'PG/Hostel'}
+                      {item.category === 'Sell' ? 'For Sale' :
+                        item.category === 'Rent' ? 'For Rent' : 'PG/Hostel'}
                     </Text>
                   </View>
                 </View>
-                
+
                 {/* Property Details */}
                 <View style={styles.propertyDetails}>
                   <Text style={styles.propertyPrice}>₹{item.price?.toLocaleString() || 'Price on request'}</Text>
                   <Text style={styles.propertyTitle} numberOfLines={1}>{item.title || 'Property Title'}</Text>
-                  
+
                   {/* Location */}
                   <View style={styles.propertyLocationContainer}>
                     <Ionicons name="location" size={16} color="#777" />
@@ -370,7 +373,7 @@ const HomeScreen = ({ navigation }) => {
                       {item.location?.address || 'Location not specified'}
                     </Text>
                   </View>
-                  
+
                   {/* Property Features */}
                   <View style={styles.propertyFeaturesContainer}>
                     {item.bedrooms && (
@@ -389,10 +392,10 @@ const HomeScreen = ({ navigation }) => {
                       <View style={styles.propertyFeature}>
                         <MaterialIcons name="square-foot" size={16} color="#555" />
                         <Text style={styles.propertyFeatureText}>
-                          {typeof item.area === 'object' && item.area.value 
-                            ? `${item.area.value} ${item.area.unit || item.areaUnit || 'sq.ft'}` 
-                            : typeof item.area === 'number' || typeof item.area === 'string' 
-                              ? `${item.area} ${item.areaUnit || 'sq.ft'}` 
+                          {typeof item.area === 'object' && item.area.value
+                            ? `${item.area.value} ${item.area.unit || item.areaUnit || 'sq.ft'}`
+                            : typeof item.area === 'number' || typeof item.area === 'string'
+                              ? `${item.area} ${item.areaUnit || 'sq.ft'}`
                               : 'Area not specified'}
                         </Text>
                       </View>
@@ -412,54 +415,6 @@ const HomeScreen = ({ navigation }) => {
           />
         )}
       </View>
-
-      {/* Additional Services Section */}
-      <View style={styles.additionalServicesContainer}>
-        <Text style={styles.additionalServicesTitle}>Additional Services</Text>
-        <View style={styles.servicesRow}>
-          <TouchableOpacity 
-            style={styles.serviceButton}
-            onPress={navigateToAddProperty}
-          >
-            <View style={styles.serviceIcon}>
-              <Ionicons name="add-circle" size={24} color="#0066cc" />
-            </View>
-            <Text style={styles.serviceText}>Post Property</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.serviceButton}
-            onPress={navigateToMapView}
-          >
-            <View style={styles.serviceIcon}>
-              <Ionicons name="location" size={24} color="#0066cc" />
-            </View>
-            <Text style={styles.serviceText}>Nearby Properties</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.serviceButton}
-            onPress={() => navigation.navigate('FavoritesTab')}
-          >
-            <View style={styles.serviceIcon}>
-              <Ionicons name="heart" size={24} color="#0066cc" />
-            </View>
-            <Text style={styles.serviceText}>Saved Properties</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.serviceButton}
-            onPress={() => alert('Contact Agent feature coming soon')}
-          >
-            <View style={styles.serviceIcon}>
-              <Ionicons name="people" size={24} color="#0066cc" />
-            </View>
-            <Text style={styles.serviceText}>Contact Agent</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* No Add Property Button anymore */}
 
       {/* Error Banner */}
       {error && (
@@ -514,6 +469,8 @@ const styles = StyleSheet.create({
   categoryRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    alignItems: 'center',
+    gap:10
   },
   categoryButton: {
     alignItems: 'center',
@@ -577,7 +534,7 @@ const styles = StyleSheet.create({
   },
   propertyImageContainer: {
     position: 'relative',
-    height: 180,
+    height: 230,
   },
   propertyImage: {
     width: '100%',
@@ -638,41 +595,26 @@ const styles = StyleSheet.create({
     color: '#555',
     marginLeft: 5,
   },
-  additionalServicesContainer: {
-    backgroundColor: '#fff',
-    paddingVertical: 15,
-    paddingHorizontal: 15,
-    marginBottom: 20,
-    marginTop: 10,
-  },
-  additionalServicesTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
-  },
-  servicesRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-  },
   serviceButton: {
     alignItems: 'center',
     width: width / 4 - 15,
   },
   serviceIcon: {
-    width: 40,
-    height: 40,
+    width: 50,
+    height: 50,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 5,
+
+  
   },
   serviceText: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#333',
     textAlign: 'center',
+    fontWeight: 'bold',
+    marginTop: 8,
   },
   loaderContainer: {
     flex: 1,

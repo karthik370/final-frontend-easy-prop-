@@ -38,7 +38,7 @@ const SearchScreen = ({ route, navigation }) => {
   }, []);
 
   // Property search with reliable filtering
-  const loadProperties = async (page = 1) => {
+  const loadProperties = async (page = 1, appliedFilters = filters) => {
     console.log('🔎 Starting property search...');
     if (page === 1) {
       setIsLoading(true);
@@ -55,60 +55,75 @@ const SearchScreen = ({ route, navigation }) => {
       }
     }, 15000); // 15 second safety timeout
     
-    console.log('🔍 Current filters:', JSON.stringify(filters));
+    console.log('🔍 Current appliedFilters:', JSON.stringify(appliedFilters));
     
     try {
-      // Create params object for axios
-      const params = {};
-      
-      // Add pagination
-      params.page = page;
-      params.limit = 10;
-      
-      // Add search query if it exists
+      // --- Improved filter parameter construction ---
+      const params = { page, limit: 10 };
+
+      // Add search query if present
       if (searchQuery && searchQuery.trim() !== '') {
         params.search = searchQuery.trim();
         params.keyword = searchQuery.trim();
       }
-      
-      // Add category filter with proper conversion
-      if (filters.category && filters.category !== '') {
-        // Convert UI category to backend category (Buy → Sell)
-        params.category = filters.category === 'Buy' ? 'Sell' : filters.category;
-        console.log(`Setting category filter to: ${params.category}`);
+
+      // Category filter (Buy → Sell mapping)
+      if (appliedFilters.category && appliedFilters.category !== '') {
+        if (appliedFilters.category === 'Buy') {
+          params.category = 'Sell';
+        } else if (appliedFilters.category === 'PG/Hostel') {
+          // For PG/Hostel, send propertyType as array if backend supports it
+          params.propertyType = ['PG', 'Hostel'];
+        } else {
+          params.category = appliedFilters.category;
+        }
       }
-      
-      // Add property type filter
-      if (filters.propertyType && filters.propertyType !== '') {
-        params.propertyType = filters.propertyType;
+
+      // Property type filter (if not already set by PG/Hostel logic)
+      if (
+        appliedFilters.propertyType &&
+        appliedFilters.propertyType !== '' &&
+        !(
+          appliedFilters.category === 'PG/Hostel' &&
+          Array.isArray(params.propertyType)
+        )
+      ) {
+        params.propertyType = appliedFilters.propertyType;
       }
-      
-      // Add price range filters
-      if (filters.minPrice && filters.minPrice !== '') {
-        params.minPrice = filters.minPrice;
+
+      // Price range
+      if (appliedFilters.minPrice && appliedFilters.minPrice !== '') {
+        params.minPrice = appliedFilters.minPrice;
       }
-      
-      if (filters.maxPrice && filters.maxPrice !== '') {
-        params.maxPrice = filters.maxPrice;
+      if (appliedFilters.maxPrice && appliedFilters.maxPrice !== '') {
+        params.maxPrice = appliedFilters.maxPrice;
       }
-      
-      // Add BHK/bedrooms filter
-      if (filters.bhk && filters.bhk !== '') {
-        params.bhk = filters.bhk;
-        params.bedrooms = filters.bhk; // For compatibility
+
+      // BHK/bedrooms
+      if (appliedFilters.bhk && appliedFilters.bhk !== '') {
+        params.bhk = appliedFilters.bhk;
+        params.bedrooms = appliedFilters.bhk;
       }
-      
-      // Add furnishing filter
-      if (filters.furnishing && filters.furnishing !== '') {
-        params.furnishing = filters.furnishing;
+
+      // Furnishing
+      if (appliedFilters.furnishing && appliedFilters.furnishing !== '') {
+        params.furnishing = appliedFilters.furnishing;
       }
-      
-      // Add city filter
-      if (filters.city && filters.city !== '') {
-        params.city = filters.city;
+
+      // City
+      if (appliedFilters.city && appliedFilters.city !== '') {
+        params.city = appliedFilters.city;
       }
-      
+
+      // Remove any undefined or empty string values (for clean API call)
+      Object.keys(params).forEach(
+        (key) =>
+          (params[key] === undefined || params[key] === '' || (Array.isArray(params[key]) && params[key].length === 0)) &&
+          delete params[key]
+      );
+
       console.log('Final search params:', params);
+      // --- End improved filter parameter construction ---
       
       // Make the API call using axios
       const response = await axios.get(`${SERVER_URL}/api/properties`, {
@@ -254,13 +269,12 @@ const SearchScreen = ({ route, navigation }) => {
   };
 
   const openFilters = () => {
-    navigation.navigate('Filter', {
+    navigation.navigate('FilterScreen', {
       currentFilters: filters,
       onApplyFilters: (newFilters) => {
         setFilters(newFilters);
-        setCurrentPage(1);
-        loadProperties(1);
-      }
+        loadProperties(1, newFilters);
+      },
     });
   };
 

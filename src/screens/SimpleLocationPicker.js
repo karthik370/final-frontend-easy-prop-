@@ -24,7 +24,7 @@ import axios from 'axios';
 
 // Google Maps API Key - using one from .env file
 // Your Google Maps API key
-const GOOGLE_MAPS_API_KEY = "AIzaSyDxKc0KJqZ_IRh_DRqiABPp9bVVy93Z5G0";
+const GOOGLE_MAPS_API_KEY = "AIzaSyA_Dun255HHND3b_lX5N05zvGT77NhDeCI";
 
 export default function SimpleLocationPicker({ route, navigation }) {
   const { onSelectLocation = () => {} } = route.params || {};

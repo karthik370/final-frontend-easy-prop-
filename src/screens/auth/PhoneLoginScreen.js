@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -10,21 +10,23 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import axios from 'axios';
-import { SERVER_URL } from '../../config/ip-config';
 import { Ionicons } from '@expo/vector-icons';
+import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
+import { auth } from '../../config/firebase';
+import { signInWithPhoneNumber } from 'firebase/auth';
 
 const PhoneLoginScreen = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const recaptchaVerifier = useRef(null);
 
   const validatePhone = () => {
     if (!phoneNumber) {
       setPhoneError('Phone number is required');
       return false;
     } else if (!/^\+?[1-9]\d{9,14}$/.test(phoneNumber)) {
-      setPhoneError('Please enter a valid phone number with country code (e.g., +910123456789)');
+      setPhoneError('Please enter a valid phone number with country code (e.g., +911234567890)');
       return false;
     }
     setPhoneError('');
@@ -36,29 +38,39 @@ const PhoneLoginScreen = ({ navigation }) => {
       setIsLoading(true);
       
       try {
-        // Call our real OTP service
-        const response = await axios.post(`${SERVER_URL}/api/otp/send`, {
-          phoneNumber: phoneNumber
-        });
+        // Send OTP using Firebase
+        const phoneProvider = await signInWithPhoneNumber(
+          auth,
+          phoneNumber,
+          recaptchaVerifier.current
+        );
         
         setIsLoading(false);
         
-        if (response.data.success) {
-          // Navigate to OTP verification screen with the real verification ID
-          navigation.navigate('OtpVerification', { 
-            phoneNumber,
-            verificationId: response.data.verificationId
-          });
-        } else {
-          Alert.alert('Error', response.data.message || 'Failed to send verification code');
-        }
+        // Store confirmationResult in context and navigate with serializable params
+        setConfirmationResult(phoneProvider); // use context
+        navigation.navigate('OtpVerification', { 
+          phoneNumber
+        });
       } catch (error) {
         setIsLoading(false);
         console.error('OTP send error:', error);
         
         // Show user-friendly error message
-        const errorMessage = error.response?.data?.message || 
-                            'Failed to send verification code. Please check your internet connection and try again.';
+        let errorMessage = 'Failed to send verification code.';
+        
+        if (error.code === 'auth/invalid-phone-number') {
+          errorMessage = 'Invalid phone number. Please enter a valid phone number with country code.';
+        } else if (error.code === 'auth/missing-phone-number') {
+          errorMessage = 'Please enter your phone number.';
+        } else if (error.code === 'auth/quota-exceeded') {
+          errorMessage = 'SMS quota exceeded. Please try again later.';
+        } else if (error.code === 'auth/user-disabled') {
+          errorMessage = 'This phone number has been disabled.';
+        } else if (error.code === 'auth/operation-not-allowed') {
+          errorMessage = 'Phone authentication is not enabled. Please contact support.';
+        }
+        
         Alert.alert('Error', errorMessage);
       }
     }
@@ -113,6 +125,13 @@ const PhoneLoginScreen = ({ navigation }) => {
           <Text style={styles.backButtonText}>Go Back</Text>
         </TouchableOpacity>
       </View>
+      
+      {/* Firebase reCAPTCHA verifier for phone auth */}
+      <FirebaseRecaptchaVerifierModal
+        ref={recaptchaVerifier}
+        firebaseConfig={auth.app.options}
+        attemptInvisibleVerification={true}
+      />
     </KeyboardAvoidingView>
   );
 };
@@ -122,7 +141,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f8f8',
   },
-
   contentContainer: {
     flex: 1,
     justifyContent: 'center',

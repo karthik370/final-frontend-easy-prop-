@@ -1,119 +1,31 @@
-import React, { useContext, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
-import { FontAwesome, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { SERVER_URL } from '../config/ip-config';
-import * as FileSystem from 'expo-file-system';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Image, ActivityIndicator, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { FavoritesContext } from '../context/FavoritesContext';
 import { AuthContext } from '../context/AuthContext';
+// Make sure getRandomFallbackImage and styles are defined/imported in this file or above
 
-// Function to determine if an image is a local expo file path
-const isLocalExpoFile = (path) => {
-  // First ensure path is a string to prevent "undefined is not a function" errors
-  if (!path || typeof path !== 'string') return false;
-  
-  return (
-    path.includes('/data/user/') || 
-    path.includes('/ExperienceData/') || 
-    path.includes('host.exp.exponent') ||
-    path.startsWith('file://')
-  );
-};
-
-// Component for handling property images with priority on Cloudinary URLs
 const PropertyImage = ({ imageUri }) => {
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(false);
-  const [imageSource, setImageSource] = React.useState(null);
-  
-  // Important: We no longer need fallback images since we're handling Cloudinary properly
-  // Only keep this single fallback for extreme cases where nothing else works
-  const fallbackImage = 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg';
-  
-  // Return the fallback image
-  const getRandomFallbackImage = () => {
-    return fallbackImage;
-  };
-  
-  // Handle image loading
-  React.useEffect(() => {
+  const [loading, setLoading] = useState(true);
+  const [imageSource, setImageSource] = useState(null);
+
+  useEffect(() => {
     const loadImage = async () => {
-      // If no image provided, use a fallback image
-      if (!imageUri || typeof imageUri !== 'string') {
-        console.log('No valid image available, using fallback');
-        setImageSource({ uri: getRandomFallbackImage() });
-        setLoading(false);
-        return;
-      }
-      
       try {
-        // PRIORITY 1: It's a Cloudinary URL (most reliable source)
-        if (imageUri.includes('cloudinary.com') || imageUri.includes('res.cloudinary.com')) {
-          console.log('Using Cloudinary image URL:', imageUri.substring(0, 50) + '...');
+        if (imageUri && typeof imageUri === 'string' && imageUri.startsWith('http')) {
           setImageSource({ uri: imageUri });
-          setLoading(false);
-          return;
+        } else {
+          setImageSource({ uri: getRandomFallbackImage() });
         }
-        
-        // PRIORITY 2: It's another web URL from the database
-        if (imageUri.startsWith('http')) {
-          console.log('Using web image URL from database');
-          setImageSource({ uri: imageUri });
-          setLoading(false);
-          return;
-        }
-        
-        // PRIORITY 3: It's a local file path - check if it exists
-        if (isLocalExpoFile(imageUri)) {
-          try {
-            const fileInfo = await FileSystem.getInfoAsync(imageUri);
-            if (fileInfo.exists) {
-              console.log('Using local file image');
-              setImageSource({ uri: imageUri });
-            } else {
-              console.log('Local file does not exist, using fallback');
-              setImageSource({ uri: getRandomFallbackImage() });
-            }
-          } catch (fileError) {
-            console.log('Error checking local file:', fileError.message);
-            setImageSource({ uri: getRandomFallbackImage() });
-          }
-          setLoading(false);
-          return;
-        }
-        
-        // PRIORITY 4: Try as a path on the API server (least likely to work)
-        if (SERVER_URL) {
-          try {
-            // Make sure to use the production URL
-            const baseUrl = SERVER_URL;
-            const fullUri = imageUri.startsWith('/') 
-              ? `${baseUrl}${imageUri}` 
-              : `${baseUrl}/${imageUri}`;
-              
-            console.log('Trying image from API server:', fullUri);
-            setImageSource({ uri: fullUri });
-          } catch (apiError) {
-            console.log('Error with API server image:', apiError.message);
-            setImageSource({ uri: getRandomFallbackImage() });
-          }
-          setLoading(false);
-          return;
-        }
-        
-        // If all else fails, use a fallback image
-        console.log('No viable image source found, using fallback');
-        setImageSource({ uri: getRandomFallbackImage() });
       } catch (error) {
-        console.log('General image loading error:', error.message);
         setImageSource({ uri: getRandomFallbackImage() });
       }
-      
       setLoading(false);
     };
-    
     loadImage();
   }, [imageUri]);
-  
+
   return (
     <View style={{ height: 200, backgroundColor: '#f8f8f8', position: 'relative' }}>
       {loading ? (
@@ -125,18 +37,16 @@ const PropertyImage = ({ imageUri }) => {
           source={imageSource || { uri: getRandomFallbackImage() }}
           style={{ width: '100%', height: '100%' }}
           resizeMode="cover"
-          onError={(e) => {
-            console.log('Image failed to load:', e.nativeEvent?.error);
-            // If image fails to load, use a fallback image
-            setImageSource({ uri: getRandomFallbackImage() });
-          }}
+          onError={() => setImageSource({ uri: getRandomFallbackImage() })}
         />
       )}
     </View>
   );
 };
 
+
 const PropertyCard = ({ property, onPress, navigation }) => {
+  if (!property || typeof property !== 'object' || !property._id) return null; // Defensive: don't render if property is missing or malformed
   // Access favorites context for real-time updates
   const { isFavorite, toggleFavorite } = useContext(FavoritesContext);
   const { userToken } = useContext(AuthContext);
@@ -191,24 +101,30 @@ const PropertyCard = ({ property, onPress, navigation }) => {
 
   // Get appropriate property tag based on type and category
   const getPropertyTag = () => {
+    if (property.propertyType === 'Hostel') {
+      return 'Hostel';
+    }
+    if (property.propertyType === 'PG') {
+      return 'PG';
+    }
     if (property.category === 'Sell') {
       return 'For Sale';
-    } else if (property.propertyType === 'PG') {
-      return 'PG';
-    } else {
-      return 'For Rent';
     }
+    return 'For Rent';
   };
 
   // Get tag color based on property category
   const getTagColor = () => {
+    if (property.propertyType === 'Hostel') {
+      return '#8e44ad'; // A distinct purple for Hostels
+    }
+    if (property.propertyType === 'PG') {
+      return '#ff6600';
+    }
     if (property.category === 'Sell') {
       return '#25d366';
-    } else if (property.propertyType === 'PG') {
-      return '#ff6600';
-    } else {
-      return '#0066cc';
     }
+    return '#0066cc';
   };
 
   return (
@@ -241,16 +157,27 @@ const PropertyCard = ({ property, onPress, navigation }) => {
               <Text style={styles.infoText}>{property.bhk} BHK</Text>
             </View>
           )}
-
-          {property.area && (
+          {property.propertyType === 'PG' || property.propertyType === 'Hostel' ? (
             <View style={styles.infoItem}>
-              <Ionicons name="square-outline" size={16} color="#666" />
-              <Text style={styles.infoText}>
-                {property.area.value} {property.area.unit}
-              </Text>
+              <MaterialCommunityIcons name="bed" size={18} color="#555" style={{ marginRight: 4 }} />
+              <Text style={styles.infoText}>{property.pgRoomType || 'Room'}</Text>
+            </View>
+          ) : (
+            <View style={styles.infoItem}>
+              <MaterialCommunityIcons name="ruler-square" size={18} color="#555" style={{ marginRight: 4 }} />
+              <Text style={styles.infoText}>{property.area?.value ? `${property.area.value} ${property.area.unit}` : ''}</Text>
             </View>
           )}
-
+          {property.propertyType === 'PG' || property.propertyType === 'Hostel' ? (
+            <View style={styles.infoItem}>
+              <MaterialCommunityIcons name="shower" size={18} color="#555" style={{ marginRight: 4 }} />
+              <Text style={styles.infoText}>{property.pgBathroomType || 'Bathroom'}</Text>
+              <MaterialCommunityIcons name="wifi" size={18} color={property.pgWifi ? '#2ecc71' : '#ccc'} style={{ marginLeft: 10, marginRight: 2 }} />
+              <Text style={styles.infoText}>{property.pgWifi ? 'Wi-Fi' : 'No Wi-Fi'}</Text>
+              <MaterialCommunityIcons name="washing-machine" size={18} color={property.pgLaundry ? '#2ecc71' : '#ccc'} style={{ marginLeft: 10, marginRight: 2 }} />
+              <Text style={styles.infoText}>{property.pgLaundry ? 'Laundry' : 'No Laundry'}</Text>
+            </View>
+          ) : null}
           {property.furnishing && (
             <View style={styles.infoItem}>
               <Ionicons name="home-outline" size={16} color="#666" />
@@ -346,6 +273,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,                  // Added letter spacing
   },
   detailsContainer: {
+    marginTop:10,
     padding: 16,                          // Increased padding
     paddingBottom: 18,                    // Extra padding at bottom
   },

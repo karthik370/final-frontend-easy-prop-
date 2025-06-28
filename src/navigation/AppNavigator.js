@@ -23,7 +23,7 @@ const AppNavigator = () => {
     const bootstrapAsync = async () => {
       try {
         await isLoggedIn();
-        console.log('AppNavigator initialized once');
+        console.log('AppNavigator initialized, login status checked');
       } catch (error) {
         console.error('Login check error:', error);
       } finally {
@@ -32,7 +32,6 @@ const AppNavigator = () => {
     };
 
     bootstrapAsync();
-    // Empty dependency array to run only once at mount
   }, []);
 
   // 3. Second useEffect - check if first launch
@@ -42,19 +41,29 @@ const AppNavigator = () => {
 
     const checkFirstLaunch = async () => {
       try {
-        // Reset the already launched flag to ensure welcome screen shows
-        await AsyncStorage.removeItem('alreadyLaunched');
-        console.log('Forced welcome screen to show');
-        setIsFirstLaunch(true);
+        const alreadyLaunched = await AsyncStorage.getItem('alreadyLaunched');
+        
+        if (alreadyLaunched === null) {
+          await AsyncStorage.setItem('alreadyLaunched', 'true');
+          setIsFirstLaunch(true);
+        } else {
+          setIsFirstLaunch(false);
+        }
       } catch (error) {
         console.log('Error with first launch check:', error);
-        setIsFirstLaunch(true); // Default to showing welcome screen even on error
+        setIsFirstLaunch(false); // Default to not showing welcome screen on error
       }
     };
     
     checkFirstLaunch();
-    // This will run once after initializing is set to false
   }, [initializing]);
+
+  // 4. Listen for userToken changes
+  useEffect(() => {
+    if (!initializing && userToken) {
+      console.log('User token detected, should navigate to Main');
+    }
+  }, [userToken, initializing]);
 
   // Loading state while checking login or first launch
   if (initializing || isLoading || isFirstLaunch === null) {
@@ -65,18 +74,21 @@ const AppNavigator = () => {
     );
   }
 
-  // Show welcome screen only if there's no user token
-  // This will allow the guest login to navigate to main screens
+  // Determine which navigator to show based on authentication state
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!userToken ? (
         <Stack.Screen 
           name="Auth" 
           component={AuthNavigator} 
-          initialParams={{ isFirstLaunch: true }}
+          initialParams={{ isFirstLaunch: isFirstLaunch }}
         />
       ) : (
-        <Stack.Screen name="Main" component={MainNavigator} />
+        <Stack.Screen 
+          name="Main" 
+          component={MainNavigator} 
+          options={{ animationEnabled: true }}
+        />
       )}
     </Stack.Navigator>
   );

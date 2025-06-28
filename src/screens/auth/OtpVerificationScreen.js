@@ -12,17 +12,21 @@ import {
   Keyboard
 } from 'react-native';
 import { AuthContext } from '../../context/AuthContext';
+import { PhoneAuthProvider, signInWithCredential } from 'firebase/auth';
+import { auth } from '../../config/firebase';
 import axios from 'axios';
 import { SERVER_URL } from '../../config/ip-config';
+import { useConfirmationResult } from '../../context/ConfirmationResultContext';
 
 const OtpVerificationScreen = ({ route, navigation }) => {
-  const { phoneNumber, verificationId } = route.params;
+  const { phoneNumber } = route.params;
+  const { confirmationResult } = useConfirmationResult();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [remainingTime, setRemainingTime] = useState(60); // 60 seconds countdown
   const [isResendDisabled, setIsResendDisabled] = useState(true);
   
-  const { firebaseLogin } = useContext(AuthContext);
+  const { setUser, setUserToken } = useContext(AuthContext);
   
   const inputRefs = useRef([]);
 
@@ -73,22 +77,27 @@ const OtpVerificationScreen = ({ route, navigation }) => {
     setIsLoading(true);
     
     try {
-      // Call our real OTP verification API
-      const response = await axios.post(`${SERVER_URL}/api/otp/verify`, {
-        verificationId,
-        otp: otpValue
+      // Verify OTP with Firebase
+      const result = await confirmationResult.confirm(otpValue);
+      const user = result.user;
+      
+      console.log('Firebase user authenticated:', user.uid);
+      
+      // Get the ID token
+      const idToken = await user.getIdToken();
+      
+      // Register/Login user in your backend
+      const response = await axios.post(`${SERVER_URL}/api/auth/firebase-phone`, {
+        uid: user.uid,
+        phoneNumber: user.phoneNumber,
+        idToken: idToken
       });
       
       if (response.data.success) {
-        // The API already handled user creation/login and returned a token
-        const { token, user } = response.data;
-        
         // Update AuthContext with the user and token
-        const { setUser, setUserToken } = useContext(AuthContext);
-        setUser(user);
-        setUserToken(token);
+        setUser(response.data.user);
+        setUserToken(response.data.token);
         
-        // Store in AsyncStorage (handled by AuthContext setUserToken)
         console.log('Phone authentication successful');
         
         // Navigate to Home screen
@@ -97,12 +106,23 @@ const OtpVerificationScreen = ({ route, navigation }) => {
           routes: [{ name: 'Home' }],
         });
       } else {
-        Alert.alert('Error', response.data.message || 'Verification failed');
+        Alert.alert('Error', response.data.message || 'Authentication failed');
+        // Sign out from Firebase if backend fails
+        await auth.signOut();
       }
     } catch (error) {
       console.error('OTP verification error:', error);
-      const errorMessage = error.response?.data?.message || 
-                          'Failed to verify code. Please try again.';
+      
+      let errorMessage = 'Failed to verify code.';
+      
+      if (error.code === 'auth/invalid-verification-code') {
+        errorMessage = 'Invalid verification code. Please check and try again.';
+      } else if (error.code === 'auth/invalid-verification-id') {
+        errorMessage = 'Verification session expired. Please request a new code.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
       Alert.alert('Error', errorMessage);
     } finally {
       setIsLoading(false);
@@ -111,42 +131,17 @@ const OtpVerificationScreen = ({ route, navigation }) => {
 
   // Handle OTP resend
   const handleResendOtp = async () => {
-    // Reset timer and disable resend button
-    setRemainingTime(60);
-    setIsResendDisabled(true);
-    setIsLoading(true);
-    
-    try {
-      // Call our real OTP service to send a new code
-      const response = await axios.post(`${SERVER_URL}/api/otp/send`, {
-        phoneNumber: phoneNumber
-      });
-      
-      setIsLoading(false);
-      
-      if (response.data.success) {
-        // Update the verification ID with the new one
-        route.params.verificationId = response.data.verificationId;
-        
-        Alert.alert('Success', 'A new verification code has been sent to your phone');
-      } else {
-        Alert.alert('Error', response.data.message || 'Failed to send new verification code');
-        // Reset the timer if failed
-        setIsResendDisabled(false);
-        setRemainingTime(0);
-      }
-    } catch (error) {
-      setIsLoading(false);
-      console.error('Resend OTP error:', error);
-      
-      const errorMessage = error.response?.data?.message || 
-                          'Failed to send new code. Please try again.';
-      Alert.alert('Error', errorMessage);
-      
-      // Reset the timer if failed
-      setIsResendDisabled(false);
-      setRemainingTime(0);
-    }
+    // Navigate back to phone login screen
+    Alert.alert(
+      'Resend Code',
+      'To receive a new verification code, please go back and enter your phone number again.',
+      [
+        {
+          text: 'OK',
+          onPress: () => navigation.goBack()
+        }
+      ]
+    );
   };
 
   return (

@@ -29,6 +29,7 @@ const ViewMapScreen = ({ route, navigation }) => {
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
+  const [currentLocation, setCurrentLocation] = useState(null); // user's actual location
   const [searchText, setSearchText] = useState('');
   const [locationSuggestions, setLocationSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -43,7 +44,9 @@ const ViewMapScreen = ({ route, navigation }) => {
       
       const { latitude, longitude } = location.coords;
       
-      // Update map region
+      setCurrentLocation({ latitude, longitude }); // store actual location
+      
+      // Optionally move map to current location
       const newRegion = {
         latitude,
         longitude,
@@ -53,7 +56,6 @@ const ViewMapScreen = ({ route, navigation }) => {
       
       setRegion(newRegion);
       
-      // Animate map to new region
       if (mapRef.current) {
         mapRef.current.animateToRegion(newRegion, 1000);
       }
@@ -502,13 +504,6 @@ const ViewMapScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header with back button and title */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#0066cc" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Map View</Text>
-      </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
@@ -660,14 +655,13 @@ const ViewMapScreen = ({ route, navigation }) => {
             })}
 
             {/* Current location marker */}
-            <Marker
-              coordinate={{
-                latitude: region.latitude,
-                longitude: region.longitude
-              }}
-              pinColor="blue"
-              title="Current Location"
-            />
+            {currentLocation && (
+              <Marker
+                coordinate={currentLocation}
+                pinColor="blue"
+                title="Current Location"
+              />
+            )}
           </MapView>
 
           {/* Current Location Button */}

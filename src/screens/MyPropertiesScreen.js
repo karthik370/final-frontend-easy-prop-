@@ -20,7 +20,6 @@ const MyPropertiesScreen = ({ navigation }) => {
   const [properties, setProperties] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('all'); // all, active, pending, expired
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
 
@@ -196,13 +195,6 @@ const MyPropertiesScreen = ({ navigation }) => {
     );
   };
 
-  const getFilteredProperties = () => {
-    if (activeFilter === 'all') {
-      return properties;
-    }
-    return properties.filter(property => property.status === activeFilter);
-  };
-
   // Mock data function for demo purposes
   const getMockProperties = () => [
     {
@@ -237,64 +229,88 @@ const MyPropertiesScreen = ({ navigation }) => {
       furnishing: 'Fully Furnished',
       images: ['https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80'],
       location: {
-        address: 'Indiranagar, Near Metro',
+        address: 'HSR Layout',
         city: 'Bangalore',
         state: 'Karnataka'
       },
       status: 'pending',
-      views: 0,
-      createdAt: '2023-05-15T14:45:00Z'
+      views: 15,
+      createdAt: '2023-06-05T14:20:00Z'
     },
     {
       _id: '3',
-      title: '1200 sq.ft Commercial Space',
-      description: 'Commercial space for office or retail in prime location',
-      price: 75000,
+      title: 'Commercial Space for Rent',
+      description: 'Prime commercial space for office or retail',
+      price: 45000,
       propertyType: 'Commercial',
       category: 'Rent',
-      area: { value: 1200, unit: 'sqft' },
-      furnishing: 'Raw',
-      images: ['https://images.unsplash.com/photo-1497366858526-0766cadbe8fa?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80'],
+      area: { value: 2200, unit: 'sqft' },
+      furnishing: 'Unfurnished',
+      images: ['https://images.unsplash.com/photo-1497366754035-f200968a6e72?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80'],
       location: {
-        address: 'MG Road, CBD',
+        address: 'MG Road',
         city: 'Bangalore',
         state: 'Karnataka'
       },
       status: 'expired',
-      views: 20,
-      createdAt: '2023-04-01T09:15:00Z'
-    },
+      views: 8,
+      createdAt: '2023-04-10T09:15:00Z'
+    }
   ];
 
-  // Property Card Component
+  // Property card component
   const PropertyCard = ({ property }) => {
     const getStatusColor = (status) => {
       switch (status) {
-        case 'active': return '#25d366'; // Green
-        case 'pending': return '#f39c12'; // Amber
-        case 'expired': return '#e74c3c'; // Red
+        case 'active': return '#25d366';
+        case 'pending': return '#f39c12';
+        case 'expired': return '#e74c3c';
         default: return '#999';
       }
     };
-
+    
     const formatDate = (dateString) => {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      const options = { year: 'numeric', month: 'short', day: 'numeric' };
+      return new Date(dateString).toLocaleDateString(undefined, options);
     };
-
+    
+    const formatPrice = (price) => {
+      if (price >= 10000000) {
+        return `₹${(price / 10000000).toFixed(2)} Cr`;
+      } else if (price >= 100000) {
+        return `₹${(price / 100000).toFixed(2)} Lac`;
+      } else if (price >= 1000) {
+        return `₹${(price / 1000).toFixed(1)}K`;
+      }
+      return `₹${price}`;
+    };
+    
     return (
       <TouchableOpacity 
         style={styles.propertyCard}
         onPress={() => handlePropertyPress(property)}
       >
+        {/* Image */}
         <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: property.images[0] }}
-            style={styles.propertyImage}
-            resizeMode="cover"
-          />
+          {property.images && property.images.length > 0 ? (
+            <Image 
+              source={{ uri: property.images[0] }} 
+              style={styles.propertyImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.noImageContainer}>
+              <Ionicons name="image-outline" size={40} color="#ccc" />
+              <Text style={styles.noImageText}>No Image</Text>
+            </View>
+          )}
+          
+          {/* Status badge */}
           <View 
-            style={[styles.statusBadge, { backgroundColor: getStatusColor(property.status) }]}
+            style={[
+              styles.statusBadge, 
+              { backgroundColor: getStatusColor(property.status) }
+            ]}
           >
             <Text style={styles.statusText}>
               {property.status.charAt(0).toUpperCase() + property.status.slice(1)}
@@ -302,113 +318,42 @@ const MyPropertiesScreen = ({ navigation }) => {
           </View>
         </View>
         
-        <View style={styles.propertyDetails}>
+        {/* Content */}
+        <View style={styles.propertyContent}>
           <Text style={styles.propertyTitle} numberOfLines={1}>
             {property.title}
           </Text>
           
           <Text style={styles.propertyPrice}>
-            ₹{property.price.toLocaleString()}
+            {formatPrice(property.price)}
             {property.category === 'Rent' ? '/month' : ''}
           </Text>
           
-          <Text style={styles.propertyLocation} numberOfLines={1}>
-            <Ionicons name="location-outline" size={14} color="#666" />
-            {' '}{property.location.address}
-          </Text>
-          
-          <View style={styles.propertyFooter}>
-            <Text style={styles.propertyDate}>
-              Posted: {formatDate(property.createdAt)}
+          <View style={styles.propertyDetails}>
+            <Text style={styles.propertyLocation} numberOfLines={1}>
+              <Ionicons name="location-outline" size={14} color="#666" />
+              {' '}
+              {property.location?.city || 'Location not specified'}
             </Text>
             
-            <View style={styles.viewsContainer}>
-              <Ionicons name="eye-outline" size={14} color="#666" />
-              <Text style={styles.viewsText}>{property.views}</Text>
+            <View style={styles.propertyMeta}>
+              <Text style={styles.propertyMetaItem}>
+                <Ionicons name="eye-outline" size={14} color="#666" />
+                {' '}
+                {property.views || 0} views
+              </Text>
+              
+              <Text style={styles.propertyMetaItem}>
+                <Ionicons name="calendar-outline" size={14} color="#666" />
+                {' '}
+                {formatDate(property.createdAt)}
+              </Text>
             </View>
           </View>
         </View>
       </TouchableOpacity>
     );
   };
-
-  // If not logged in, show login prompt
-  if (!userToken) {
-    return (
-      <View style={styles.loginPromptContainer}>
-        <Ionicons name="home" size={80} color="#ddd" />
-        <Text style={styles.loginPromptTitle}>No Properties Found</Text>
-        <Text style={styles.loginPromptText}>
-          Sign in to view and manage your property listings
-        </Text>
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={() => navigation.navigate('Auth')}
-        >
-          <Text style={styles.loginButtonText}>Sign In</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  // Loading state
-  if (isLoading && !refreshing) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0066cc" />
-        <Text style={styles.loadingText}>Loading your properties...</Text>
-      </View>
-    );
-  }
-
-  // Filter tabs
-  const FilterTabs = () => (
-    <View style={styles.filterContainer}>
-      <TouchableOpacity
-        style={[styles.filterTab, activeFilter === 'all' && styles.activeFilterTab]}
-        onPress={() => setActiveFilter('all')}
-      >
-        <Text 
-          style={[styles.filterText, activeFilter === 'all' && styles.activeFilterText]}
-        >
-          All
-        </Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity
-        style={[styles.filterTab, activeFilter === 'active' && styles.activeFilterTab]}
-        onPress={() => setActiveFilter('active')}
-      >
-        <Text 
-          style={[styles.filterText, activeFilter === 'active' && styles.activeFilterText]}
-        >
-          Active
-        </Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity
-        style={[styles.filterTab, activeFilter === 'pending' && styles.activeFilterTab]}
-        onPress={() => setActiveFilter('pending')}
-      >
-        <Text 
-          style={[styles.filterText, activeFilter === 'pending' && styles.activeFilterText]}
-        >
-          Pending
-        </Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity
-        style={[styles.filterTab, activeFilter === 'expired' && styles.activeFilterTab]}
-        onPress={() => setActiveFilter('expired')}
-      >
-        <Text 
-          style={[styles.filterText, activeFilter === 'expired' && styles.activeFilterText]}
-        >
-          Expired
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
 
   // Property modal actions
   const PropertyActionModal = () => (
@@ -475,25 +420,43 @@ const MyPropertiesScreen = ({ navigation }) => {
     </Modal>
   );
 
-  const filteredProperties = getFilteredProperties();
+  // If not logged in, show login prompt
+  if (!userToken) {
+    return (
+      <View style={styles.loginPromptContainer}>
+        <Ionicons name="home" size={80} color="#ddd" />
+        <Text style={styles.loginPromptTitle}>No Properties Found</Text>
+        <Text style={styles.loginPromptText}>
+          Sign in to view and manage your property listings
+        </Text>
+        <TouchableOpacity
+          style={styles.loginButton}
+          onPress={() => navigation.navigate('Auth')}
+        >
+          <Text style={styles.loginButtonText}>Sign In</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
-  // Empty state based on filter
-  if (filteredProperties.length === 0) {
+  // Loading state
+  if (isLoading && !refreshing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0066cc" />
+        <Text style={styles.loadingText}>Loading your properties...</Text>
+      </View>
+    );
+  }
+
+  // Empty state
+  if (properties.length === 0) {
     return (
       <View style={styles.container}>
-        <FilterTabs />
         <View style={styles.emptyContainer}>
           <Ionicons name="home-outline" size={80} color="#ddd" />
-          <Text style={styles.emptyTitle}>
-            {activeFilter === 'all' 
-              ? 'No Properties Yet' 
-              : `No ${activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1)} Properties`}
-          </Text>
-          <Text style={styles.emptyText}>
-            {activeFilter === 'all' 
-              ? 'Your property listings will appear here'
-              : `You don't have any ${activeFilter} property listings`}
-          </Text>
+          <Text style={styles.emptyTitle}>No Properties Yet</Text>
+          <Text style={styles.emptyText}>Your property listings will appear here</Text>
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => navigation.navigate('AddProperty')}
@@ -508,10 +471,8 @@ const MyPropertiesScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <FilterTabs />
-      
       <FlatList
-        data={filteredProperties}
+        data={properties}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => <PropertyCard property={item} />}
         refreshing={refreshing}
@@ -522,7 +483,7 @@ const MyPropertiesScreen = ({ navigation }) => {
           <View style={styles.header}>
             <Text style={styles.headerTitle}>My Properties</Text>
             <Text style={styles.headerCount}>
-              {filteredProperties.length} {filteredProperties.length === 1 ? 'property' : 'properties'}
+              {properties.length} {properties.length === 1 ? 'property' : 'properties'}
             </Text>
           </View>
         }
@@ -589,30 +550,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  filterContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  filterTab: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  activeFilterTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#0066cc',
-  },
-  filterText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  activeFilterText: {
-    fontWeight: 'bold',
-    color: '#0066cc',
-  },
   listContent: {
     paddingBottom: 20,
   },
@@ -647,26 +584,38 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: 'relative',
+    height: 150,
   },
   propertyImage: {
     width: '100%',
-    height: 150,
+    height: '100%',
+  },
+  noImageContainer: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#f9f9f9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noImageText: {
+    marginTop: 5,
+    color: '#999',
   },
   statusBadge: {
     position: 'absolute',
     top: 10,
-    left: 10,
+    right: 10,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 15,
+    borderRadius: 5,
   },
   statusText: {
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
   },
-  propertyDetails: {
-    padding: 12,
+  propertyContent: {
+    padding: 15,
   },
   propertyTitle: {
     fontSize: 16,
@@ -675,34 +624,27 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   propertyPrice: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#0066cc',
-    marginBottom: 5,
+    marginBottom: 10,
+  },
+  propertyDetails: {
+    marginTop: 5,
   },
   propertyLocation: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 8,
+    marginBottom: 5,
   },
-  propertyFooter: {
+  propertyMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     marginTop: 5,
   },
-  propertyDate: {
+  propertyMetaItem: {
     fontSize: 12,
     color: '#999',
-  },
-  viewsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  viewsText: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 4,
   },
   emptyContainer: {
     flex: 1,
@@ -739,10 +681,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
     marginHorizontal: 15,
     marginTop: 10,
     marginBottom: 20,
+    paddingVertical: 12,
     borderRadius: 5,
   },
   addPropertyButtonText: {

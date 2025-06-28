@@ -11,6 +11,8 @@ import NotificationsScreen from '../../screens/NotificationsScreen';
 import MessagesScreen from '../../screens/MessagesScreen';
 import ChatScreen from '../../screens/ChatScreen';
 import ViewMapScreen from '../../screens/ViewMapScreen';
+import HelpSupport from '../../screens/HelpSupport';
+import AboutApp from '../../screens/AboutApp';
 
 const Stack = createNativeStackNavigator();
 
@@ -74,6 +76,16 @@ const ProfileStack = () => {
         name="ViewMap" 
         component={ViewMapScreen} 
         options={{ title: 'Map View' }}
+      />
+      <Stack.Screen 
+        name="HelpSupport" 
+        component={HelpSupport} 
+        options={{ title: 'Help & Support' }}
+      />
+      <Stack.Screen 
+        name="AboutApp" 
+        component={AboutApp} 
+        options={{ title: 'About App' }}
       />
     </Stack.Navigator>
   );

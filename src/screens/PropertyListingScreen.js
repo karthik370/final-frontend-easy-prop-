@@ -125,10 +125,10 @@ const PropertyListingScreen = ({ route, navigation }) => {
       if (category && category !== 'All') {
         // Special handling for PG or PG/Hostel category
         if (category === 'PG/Hostel' || category === 'PG') {
-          // Explicitly filter by propertyType=PG or propertyType=Hostel
-          // This matches exactly what's in your database
-          fetchUrl += `?propertyType=PG`;
-          console.log('Requesting ONLY properties with propertyType=PG');
+          // The backend is configured to handle `category=PG/Hostel` by returning both PG and Hostel types.
+          // We will send the category parameter instead of propertyType.
+          fetchUrl += `?category=PG/Hostel`;
+          console.log('Requesting all properties in PG/Hostel category');
         } 
         // Handle Buy category - maps to Sell in the database
         else if (category === 'Buy') {

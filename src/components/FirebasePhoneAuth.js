@@ -11,12 +11,13 @@ const FirebasePhoneAuth = ({ phoneNumber, onSendOtp, children }) => {
   
   // Firebase configuration from app.json/app.config.js
   const firebaseConfig = Constants.expoConfig?.extra?.firebase || {
-    apiKey: "AIzaSyB7Ajg2O5C0Af1fJ6mGEeUcE2_LgkGMKL0",
-    authDomain: "olx-clone-73fb2.firebaseapp.com",
-    projectId: "olx-clone-73fb2",
-    storageBucket: "olx-clone-73fb2.appspot.com",
-    messagingSenderId: "234981884374",
-    appId: "1:234981884374:web:1ea69aefc53465dac39a6c"
+    apiKey: "AIzaSyBbMy8x3rNPoySTTPn490YsBMj54ONX_rU",
+    authDomain: "realestate-668fa.firebaseapp.com",
+    projectId: "realestate-668fa",
+    storageBucket: "realestate-668fa.firebasestorage.app",
+    messagingSenderId: "402088305835",
+    appId: "1:402088305835:web:e17496d9837969427043ee",
+    measurementId: "G-0Y40C6GLMP"
   };
 
   // Send the OTP when phoneNumber changes

@@ -13,13 +13,12 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import { SERVER_URL } from '../config/ip-config';
 import { AuthContext } from '../context/AuthContext';
 
 const EditProfileScreen = ({ navigation }) => {
-  const { user, userToken, updateUserProfile } = useContext(AuthContext);
+  const { user, userToken, updateProfile } = useContext(AuthContext);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -42,7 +41,7 @@ const EditProfileScreen = ({ navigation }) => {
       setEmail(user.email || '');
       setPhone(user.phone || '');
       setBio(user.bio || '');
-      setLocation(user.location || '');
+      setLocation(typeof user.location === 'object' ? user.location.city || '' : user.location || '');
     }
   }, [user]);
 
@@ -71,32 +70,6 @@ const EditProfileScreen = ({ navigation }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const pickImage = async () => {
-    try {
-      // Request permissions
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (permissionResult.granted === false) {
-        Alert.alert('Permission Required', 'You need to allow access to your photos to upload an avatar');
-        return;
-      }
-      
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
-      
-      if (!result.canceled) {
-        setAvatar(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.log('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
-    }
-  };
-
   const handleSave = async () => {
     if (!validateForm()) {
       return;
@@ -104,43 +77,30 @@ const EditProfileScreen = ({ navigation }) => {
     
     setIsSaving(true);
     try {
-      // Create form data for image upload
-      const formData = new FormData();
-      
-      if (avatar && !avatar.startsWith('http')) {
-        const filename = avatar.split('/').pop();
-        const match = /\.([\w\d_]+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : 'image/jpeg';
-        
-        formData.append('avatar', {
-          uri: Platform.OS === 'ios' ? avatar.replace('file://', '') : avatar,
-          name: filename,
-          type,
-        });
-      }
-      
-      // Append other user data
-      formData.append('name', name);
-      formData.append('email', email);
-      formData.append('phone', phone);
-      formData.append('bio', bio);
-      formData.append('location', location);
+      // Create form data for profile update
+      const userData = {
+        name,
+        email,
+        phone,
+        bio,
+        location: { city: location }
+      };
       
       // Update user profile on the server
       const response = await axios.put(
-        `${SERVER_URL}/api/users/profile`,
-        formData,
+        `${SERVER_URL}/api/auth/profile`,
+        userData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${userToken}`,
           },
         }
       );
       
       // Update local user data
-      if (response.data.user) {
-        updateUserProfile(response.data.user);
+      if (response.data) {
+        updateProfile(response.data);
       }
       
       setIsSaving(false);
@@ -153,19 +113,6 @@ const EditProfileScreen = ({ navigation }) => {
         'Update Failed', 
         error.response?.data?.message || 'Failed to update profile. Please try again.'
       );
-      
-      // For demo purposes, let's simulate a successful update
-      updateUserProfile({
-        ...user,
-        name,
-        email,
-        phone,
-        bio,
-        location,
-        avatar
-      });
-      Alert.alert('Success', 'Profile updated successfully (Demo Mode)');
-      navigation.goBack();
     }
   };
 
@@ -185,20 +132,10 @@ const EditProfileScreen = ({ navigation }) => {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
     >
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Edit Profile</Text>
-          <View style={styles.placeholder} />
-        </View>
 
         {/* Avatar section */}
         <View style={styles.avatarContainer}>
-          <TouchableOpacity onPress={pickImage}>
+          <View>
             {avatar ? (
               <Image source={{ uri: avatar }} style={styles.avatar} />
             ) : (
@@ -208,13 +145,7 @@ const EditProfileScreen = ({ navigation }) => {
                 </Text>
               </View>
             )}
-            <View style={styles.editAvatarButton}>
-              <Ionicons name="camera" size={14} color="#fff" />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={pickImage}>
-            <Text style={styles.changePhotoText}>Change Profile Photo</Text>
-          </TouchableOpacity>
+          </View>
         </View>
 
         {/* Form fields */}
@@ -313,29 +244,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 15,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  placeholder: {
-    width: 40,
-  },
   avatarContainer: {
     alignItems: 'center',
     padding: 20,
@@ -360,24 +268,6 @@ const styles = StyleSheet.create({
     fontSize: 40,
     fontWeight: 'bold',
     color: '#fff',
-  },
-  editAvatarButton: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#0066cc',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  changePhotoText: {
-    color: '#0066cc',
-    fontSize: 14,
-    marginTop: 10,
   },
   formContainer: {
     padding: 20,

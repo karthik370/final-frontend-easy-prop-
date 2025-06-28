@@ -8,7 +8,7 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 
 const ProfileScreen = ({ navigation }) => {
-  const { user, userToken, logout } = useContext(AuthContext);
+  const { user, userToken, logout, setUser } = useContext(AuthContext);
   const [stats, setStats] = useState({
     properties: 0,
     views: 0,
@@ -27,85 +27,86 @@ const ProfileScreen = ({ navigation }) => {
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       if (userToken) {
-        console.log('ProfileScreen focused - refreshing user stats');
+        console.log('ProfileScreen focused - refreshing user stats and profile');
         fetchUserStats();
+        fetchUserProfile();
       }
     });
     
     return unsubscribe;
   }, [navigation, userToken]);
 
-  // DIRECT fetch user stats from MongoDB Atlas
+  // Add a useEffect to log the current user data
+  useEffect(() => {
+    if (user) {
+      console.log('ProfileScreen - Current user data:', user);
+    }
+  }, [user]);
+
+  // Fetch user stats from server
   const fetchUserStats = async () => {
     if (!userToken) {
       return; // Don't fetch if not logged in
     }
     
     setIsLoading(true);
-    console.log('DIRECT FETCH: Getting user stats from MongoDB Atlas...');
+    console.log('Fetching user stats...');
     
     try {
-      // Use centralized SERVER_URL configuration
-      const propertiesUrl = `${SERVER_URL}/api/properties/user`;
-      console.log('USING CENTRALIZED API URL FOR USER PROPERTIES:', propertiesUrl);
-      
-      // Simple fetch request with auth token
-      const propertiesResponse = await fetch(propertiesUrl, {
+      // Use the correct endpoint for user stats
+      const response = await axios.get(`${SERVER_URL}/api/user-settings/stats`, {
         headers: {
           'Authorization': `Bearer ${userToken}`
         }
       });
       
-      if (!propertiesResponse.ok) {
-        throw new Error(`Server returned ${propertiesResponse.status} for properties`);
+      if (response.data) {
+        console.log('User stats fetched successfully:', response.data);
+        setStats({
+          properties: response.data.properties || 0,
+          views: response.data.views || 0,
+          favorites: response.data.favorites || 0
+        });
       }
-      
-      // Parse the properties JSON response
-      const propertiesData = await propertiesResponse.json();
-      console.log('USER PROPERTIES FROM MONGODB ATLAS:', propertiesData);
-      
-      // Use centralized SERVER_URL for favorites
-      const favoritesUrl = `${SERVER_URL}/api/properties/favorites`;
-      console.log('USING CENTRALIZED API URL FOR FAVORITES:', favoritesUrl);
-      
-      const favoritesResponse = await fetch(favoritesUrl, {
-        headers: {
-          'Authorization': `Bearer ${userToken}`
-        }
-      });
-      
-      if (!favoritesResponse.ok) {
-        throw new Error(`Server returned ${favoritesResponse.status} for favorites`);
-      }
-      
-      // Parse the favorites JSON response
-      const favoritesData = await favoritesResponse.json();
-      console.log('USER FAVORITES FROM MONGODB ATLAS:', favoritesData);
-      
-      // Calculate total views across all properties
-      const totalViews = propertiesData.reduce((total, property) => total + (property.views || 0), 0);
-      
-      // Update the stats
-      setStats({
-        properties: propertiesData.length || 0,
-        views: totalViews || 0,
-        favorites: favoritesData.length || 0
-      });
-      
-      console.log('USER STATS UPDATED FROM MONGODB ATLAS');
-      setIsLoading(false);
     } catch (error) {
-      console.error('MONGODB ATLAS ERROR:', error.message);
-      setIsLoading(false);
+      console.error('Error fetching user stats:', error);
       
-      // Set mock stats for demo
-      const mockStats = {
-        properties: 2,
-        views: 47,
-        favorites: 5
-      };
-      console.log('Using mock stats instead:', mockStats);
-      setStats(mockStats);
+      // Set empty stats instead of mock data
+      setStats({
+        properties: 0,
+        views: 0,
+        favorites: 0
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch user profile data
+  const fetchUserProfile = async () => {
+    if (!userToken) {
+      return; // Don't fetch if not logged in
+    }
+    
+    try {
+      const response = await axios.get(`${SERVER_URL}/api/auth/profile`, {
+        headers: {
+          'Authorization': `Bearer ${userToken}`
+        }
+      });
+      
+      if (response.data) {
+        console.log('User profile fetched successfully:', response.data);
+        // Update the user context with fresh data
+        if (response.data.email) {
+          setUser(prevUser => ({
+            ...prevUser,
+            ...response.data
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
     }
   };
 
@@ -186,6 +187,7 @@ const ProfileScreen = ({ navigation }) => {
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{user?.name || 'User'}</Text>
+            {console.log('Rendering email:', user?.email)}
             <Text style={styles.profileDetail}>
               <Ionicons name="mail-outline" size={14} color="#666" />
               {' '}{user?.email || 'No email'}
@@ -194,6 +196,11 @@ const ProfileScreen = ({ navigation }) => {
               <Ionicons name="call-outline" size={14} color="#666" />
               {' '}{user?.phone || 'No phone'}
             </Text>
+            {user?.bio && (
+              <Text style={styles.profileBio} numberOfLines={2}>
+                {user.bio}
+              </Text>
+            )}
           </View>
           <TouchableOpacity 
             style={styles.editProfileButton}
@@ -272,7 +279,10 @@ const ProfileScreen = ({ navigation }) => {
           <Ionicons name="chevron-forward" size={20} color="#999" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('HelpSupport')}
+        >
           <View style={[styles.menuIcon, styles.iconHelp]}>
             <Ionicons name="help-circle" size={22} color="#fff" />
           </View>
@@ -283,7 +293,10 @@ const ProfileScreen = ({ navigation }) => {
           <Ionicons name="chevron-forward" size={20} color="#999" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('AboutApp')}
+        >
           <View style={[styles.menuIcon, styles.iconAbout]}>
             <Ionicons name="information-circle" size={22} color="#fff" />
           </View>
@@ -483,6 +496,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#e74c3c',
+  },
+  profileBio: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 5,
+    fontStyle: 'italic',
   },
 });
 

@@ -40,6 +40,10 @@ const AddPropertyScreen = ({ navigation }) => {
     furnishing: 'Unfurnished',
     amenities: [],
     images: [],
+    pgRoomType: 'Single',
+    pgBathroomType: 'Shared',
+    pgWifi: false,
+    pgLaundry: false,
     location: {
       address: '',
       city: '',
@@ -68,12 +72,41 @@ const AddPropertyScreen = ({ navigation }) => {
     propertyType: Yup.string().required('Property type is required'),
     // Use proper conditional validation
     bhk: Yup.mixed().when('propertyType', {
-      is: (type) => ['Flat', 'House'].includes(type),
+      is: (type) => ['Flat', 'House', 'Villa', 'Apartment'].includes(type),
       then: () => Yup.number().typeError('BHK must be a number').required('BHK is required').positive('BHK must be positive'),
       otherwise: () => Yup.mixed().nullable()
     }),
-    areaValue: Yup.number().typeError('Area must be a number').required('Area is required').positive('Area must be positive'),
-    areaUnit: Yup.string().required('Area unit is required'),
+    areaValue: Yup.mixed().when('propertyType', {
+      is: (type) => type !== 'PG' && type !== 'Hostel',
+      then: () => Yup.number().typeError('Area must be a number').required('Area is required').positive('Area must be positive'),
+      otherwise: () => Yup.mixed().nullable()
+    }),
+    areaUnit: Yup.mixed().when('propertyType', {
+      is: (type) => type !== 'PG' && type !== 'Hostel',
+      then: () => Yup.string().required('Area unit is required'),
+      otherwise: () => Yup.mixed().nullable()
+    }),
+    // PG/Hostel-specific validation
+    pgRoomType: Yup.mixed().when('propertyType', {
+      is: (type) => type === 'PG' || type === 'Hostel',
+      then: () => Yup.string().required('Room type is required'),
+      otherwise: () => Yup.mixed().nullable()
+    }),
+    pgBathroomType: Yup.mixed().when('propertyType', {
+      is: (type) => type === 'PG' || type === 'Hostel',
+      then: () => Yup.string().required('Bathroom type is required'),
+      otherwise: () => Yup.mixed().nullable()
+    }),
+    pgWifi: Yup.mixed().when('propertyType', {
+      is: (type) => type === 'PG' || type === 'Hostel',
+      then: () => Yup.boolean(),
+      otherwise: () => Yup.mixed().nullable()
+    }),
+    pgLaundry: Yup.mixed().when('propertyType', {
+      is: (type) => type === 'PG' || type === 'Hostel',
+      then: () => Yup.boolean(),
+      otherwise: () => Yup.mixed().nullable()
+    }),
     furnishing: Yup.string().required('Furnishing status is required'),
     images: Yup.array().min(1, 'At least one image is required'),
     // Simplified location validation to avoid nested issues
@@ -95,7 +128,7 @@ const AddPropertyScreen = ({ navigation }) => {
       navigation.navigate('ProfileTab', { screen: 'Profile' });
       return;
     }
-    
+
     // Check if user is a guest - guests cannot submit properties
     if (user?.isGuest) {
       Alert.alert(
@@ -119,8 +152,22 @@ const AddPropertyScreen = ({ navigation }) => {
       return;
     }
 
+    // Special validation for PG/Hostel properties
+    if (values.propertyType === 'PG' || values.propertyType === 'Hostel') {
+      if (!values.pgRoomType) {
+        Alert.alert('Room Type Required', 'Please select a room type for your PG/Hostel');
+        return;
+      }
+      if (!values.pgBathroomType) {
+        Alert.alert('Bathroom Type Required', 'Please select a bathroom type for your PG/Hostel');
+        return;
+      }
+    }
+
+    // All validation is now handled by the Yup validation schema.
+
     setIsLoading(true);
-    
+
     try {
       console.log('📤 Starting property submission process...');
       setIsLoading(true);
@@ -132,8 +179,8 @@ const AddPropertyScreen = ({ navigation }) => {
       
       try {
         // Try to upload the actual images to Cloudinary
-        const imageUploadResult = await uploadMultipleImages(values.images, 'property-images');
-        
+      const imageUploadResult = await uploadMultipleImages(values.images, 'property-images');
+
         if (imageUploadResult.success && imageUploadResult.urls && imageUploadResult.urls.length > 0) {
           console.log(`✅ Successfully uploaded ${imageUploadResult.count} images to Cloudinary`);
           finalImageUrls = imageUploadResult.urls;
@@ -162,13 +209,8 @@ const AddPropertyScreen = ({ navigation }) => {
         category: values.category,
         propertyType: values.propertyType,
         bhk: values.bhk ? parseInt(values.bhk) : undefined,
-        area: {
-          value: parseFloat(values.areaValue),
-          unit: values.areaUnit
-        },
         furnishing: values.furnishing,
         amenities: values.amenities,
-        // Use the pre-existing Cloudinary image URLs
         images: finalImageUrls,
         location: {
           address: values.location.address,
@@ -186,16 +228,42 @@ const AddPropertyScreen = ({ navigation }) => {
         }
       };
       
-      console.log('Submitting property:', JSON.stringify(propertyData));
+      // Only add area for non-PG/Hostel
+      if (values.propertyType !== 'PG' && values.propertyType !== 'Hostel') {
+        propertyData.area = {
+          value: parseFloat(values.areaValue),
+          unit: values.areaUnit
+        };
+      } else {
+        // For PG/Hostel, add PG-specific fields and ensure area is not included.
+        propertyData.pgRoomType = values.pgRoomType;
+        propertyData.pgBathroomType = values.pgBathroomType;
+        propertyData.pgWifi = values.pgWifi;
+        propertyData.pgLaundry = values.pgLaundry;
+        delete propertyData.area; // Ensure area is not present
+      }
+
+      // DEBUG: Alert if area is still present for PG/Hostel
+      if ((values.propertyType === 'PG' || values.propertyType === 'Hostel') && propertyData.area) {
+        Alert.alert('DEBUG ERROR', 'Area is still present in payload for PG/Hostel!');
+        console.log('DEBUG: Area should NOT be sent for PG/Hostel:', JSON.stringify(propertyData));
+      }
+
+      // Log PG/Hostel fields for debug
+      if (values.propertyType === 'PG' || values.propertyType === 'Hostel') {
+        console.log('DEBUG: Sending pgRoomType:', propertyData.pgRoomType, '| pgBathroomType:', propertyData.pgBathroomType);
+      }
+
+      console.log('FINAL SUBMISSION PAYLOAD:', JSON.stringify(propertyData));
       
       // Define retry function for reliable submission even in low network
       const submitWithRetry = async (retries = 3) => {
         try {
           console.log(`Attempt to submit property (${retries} retries left)`);
           // Use SERVER_URL from centralized config for consistency
-          const response = await axios.post(`${SERVER_URL}/api/properties`, propertyData, {
-            headers: {
-              'Content-Type': 'application/json',
+      const response = await axios.post(`${SERVER_URL}/api/properties`, propertyData, {
+        headers: {
+          'Content-Type': 'application/json',
               'Authorization': `Bearer ${userToken}`
             },
             // Longer timeout for slow connections
@@ -221,14 +289,14 @@ const AddPropertyScreen = ({ navigation }) => {
       submitWithRetry()
       .then(response => {
         console.log('Property submission successful:', response.data);
-        setIsLoading(false);
-        
+      setIsLoading(false);
+
         // Show success message
-        Alert.alert(
-          'Success!', 
+      Alert.alert(
+        'Success!',
           'Your property has been successfully added with cloud-hosted images!',
           [{ 
-            text: 'View in Home', 
+            text: 'View in Home',
             onPress: () => {
               navigation.navigate('HomeTab', {
                 screen: 'Home',
@@ -240,14 +308,14 @@ const AddPropertyScreen = ({ navigation }) => {
       })
       .catch(error => {
         console.error('Property submission failed:', error.message);
-        setIsLoading(false);
+      setIsLoading(false);
         
         // Show error message
-        Alert.alert(
-          'Submission Failed', 
+      Alert.alert(
+        'Submission Failed',
           'Could not save your property. Please try again.',
-          [{ text: 'OK' }]
-        );
+        [{ text: 'OK' }]
+      );
       });
     } catch (error) {
       console.error('Error in property submission process:', error.message);
@@ -326,7 +394,7 @@ const AddPropertyScreen = ({ navigation }) => {
         setLocationLoading(false);
         return;
       }
-      
+
       // Directly use Expo Location API with highest accuracy
       Alert.alert('Getting Location', 'Please wait while we get your current location...');
       
@@ -336,7 +404,7 @@ const AddPropertyScreen = ({ navigation }) => {
         console.log(`Location acquired: ${latitude}, ${longitude}`);
         
         // Get address from coordinates
-        const addressResponse = await Location.reverseGeocodeAsync({ latitude, longitude });
+      const addressResponse = await Location.reverseGeocodeAsync({ latitude, longitude });
         const addressData = addressResponse[0] || {};
         
         // Format location data for the form
@@ -384,7 +452,7 @@ const AddPropertyScreen = ({ navigation }) => {
           
           // Process location with our helper function
           return await processLocationData(coords, setFieldValue);
-        } catch (error) {
+    } catch (error) {
           console.error('Error getting location:', error);
           Alert.alert(
             'Location Error',
@@ -475,6 +543,13 @@ const AddPropertyScreen = ({ navigation }) => {
                         if (!['Flat', 'House'].includes(type.value)) {
                           setFieldValue('bhk', '');
                         }
+                        // Initialize PG/Hostel fields when those types are selected
+                        if (type.value === 'PG' || type.value === 'Hostel') {
+                          setFieldValue('pgRoomType', 'Single');
+                          setFieldValue('pgBathroomType', 'Shared');
+                          setFieldValue('pgWifi', false);
+                          setFieldValue('pgLaundry', false);
+                        }
                       }}
                     >
                       <Text 
@@ -555,43 +630,128 @@ const AddPropertyScreen = ({ navigation }) => {
                   </>
                 )}
 
-                {/* Area Input */}
-                <Text style={styles.label}>Area</Text>
-                <View style={styles.inputRow}>
-                  <TextInput
-                    style={[styles.input, styles.inputRowItem]}
-                    placeholder="e.g., 1200"
-                    value={values.areaValue}
-                    onChangeText={handleChange('areaValue')}
-                    onBlur={handleBlur('areaValue')}
-                    keyboardType="numeric"
-                  />
-                  <View style={styles.pickerContainer}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      {areaUnits.map((unit) => (
+                {/* PG/Hostel Fields */}
+                {(values.propertyType === 'PG' || values.propertyType === 'Hostel') ? (
+                  <>
+                    {/* Room Type */}
+                    <Text style={styles.label}>Room Type</Text>
+                    <View style={styles.buttonGroup}>
+                      {['Single', 'Double', 'Shared', 'Dormitory'].map((type) => (
                         <TouchableOpacity
-                          key={unit.value}
+                          key={type}
                           style={[
-                            styles.unitButton,
-                            values.areaUnit === unit.value && styles.unitButtonSelected,
+                            styles.buttonOption,
+                            values.pgRoomType === type && styles.buttonOptionSelected,
                           ]}
-                          onPress={() => setFieldValue('areaUnit', unit.value)}
+                          onPress={() => setFieldValue('pgRoomType', type)}
                         >
-                          <Text 
+                          <Text
                             style={[
-                              styles.unitButtonText,
-                              values.areaUnit === unit.value && styles.unitButtonTextSelected,
+                              styles.buttonOptionText,
+                              values.pgRoomType === type && styles.buttonOptionTextSelected,
                             ]}
                           >
-                            {unit.label}
+                            {type}
                           </Text>
                         </TouchableOpacity>
                       ))}
-                    </ScrollView>
-                  </View>
-                </View>
-                {touched.areaValue && errors.areaValue && (
-                  <Text style={styles.errorText}>{errors.areaValue}</Text>
+                    </View>
+                    {touched.pgRoomType && errors.pgRoomType && (
+                      <Text style={styles.errorText}>{errors.pgRoomType}</Text>
+                    )}
+
+                    {/* Bathroom Type */}
+                    <Text style={styles.label}>Bathroom Type</Text>
+                    <View style={styles.buttonGroup}>
+                      {['Attached', 'Shared'].map((type) => (
+                        <TouchableOpacity
+                          key={type}
+                          style={[
+                            styles.buttonOption,
+                            values.pgBathroomType === type && styles.buttonOptionSelected,
+                          ]}
+                          onPress={() => setFieldValue('pgBathroomType', type)}
+                        >
+                          <Text
+                            style={[
+                              styles.buttonOptionText,
+                              values.pgBathroomType === type && styles.buttonOptionTextSelected,
+                            ]}
+                          >
+                            {type}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                    {touched.pgBathroomType && errors.pgBathroomType && (
+                      <Text style={styles.errorText}>{errors.pgBathroomType}</Text>
+                    )}
+
+                    {/* Wi-Fi/Internet Access */}
+                    <View style={styles.inputRow}>
+                      <Text style={styles.label}>Wi-Fi/Internet Access</Text>
+                      <Switch
+                        value={values.pgWifi}
+                        onValueChange={(val) => setFieldValue('pgWifi', val)}
+                      />
+                    </View>
+                    {touched.pgWifi && errors.pgWifi && (
+                      <Text style={styles.errorText}>{errors.pgWifi}</Text>
+                    )}
+
+                    {/* Laundry Facilities */}
+                    <View style={styles.inputRow}>
+                      <Text style={styles.label}>Laundry Facilities</Text>
+                      <Switch
+                        value={values.pgLaundry}
+                        onValueChange={(val) => setFieldValue('pgLaundry', val)}
+                      />
+                    </View>
+                    {touched.pgLaundry && errors.pgLaundry && (
+                      <Text style={styles.errorText}>{errors.pgLaundry}</Text>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* Area Input */}
+                    <Text style={styles.label}>Area</Text>
+                    <View style={styles.inputRow}>
+                      <TextInput
+                        style={[styles.input, styles.inputRowItem]}
+                        placeholder="e.g., 1200"
+                        value={values.areaValue}
+                        onChangeText={handleChange('areaValue')}
+                        onBlur={handleBlur('areaValue')}
+                        keyboardType="numeric"
+                      />
+                      <View style={styles.pickerContainer}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                          {areaUnits.map((unit) => (
+                          <TouchableOpacity
+                            key={unit.value}
+                              style={[
+                                styles.unitButton,
+                                values.areaUnit === unit.value && styles.unitButtonSelected,
+                              ]}
+                            onPress={() => setFieldValue('areaUnit', unit.value)}
+                          >
+                              <Text
+                                style={[
+                                  styles.unitButtonText,
+                                  values.areaUnit === unit.value && styles.unitButtonTextSelected,
+                                ]}
+                              >
+                                {unit.label}
+                              </Text>
+                          </TouchableOpacity>
+                        ))}
+                        </ScrollView>
+                      </View>
+                    </View>
+                    {touched.areaValue && errors.areaValue && (
+                      <Text style={styles.errorText}>{errors.areaValue}</Text>
+                    )}
+                  </>
                 )}
 
                 {/* Furnishing Status */}
@@ -630,10 +790,10 @@ const AddPropertyScreen = ({ navigation }) => {
                     <Text style={styles.locationButtonText}>
                       {values.location.address ? 'Change Location' : 'Pick Location on Map'}
                     </Text>
-                  </TouchableOpacity>
+                </TouchableOpacity>
 
                   {/* Use Current Location Button */}
-                  <TouchableOpacity
+                    <TouchableOpacity
                     style={[styles.currentLocationButton, locationLoading && styles.loadingButton]}
                     onPress={() => useCurrentLocation(setFieldValue)}
                     disabled={locationLoading}
@@ -646,7 +806,7 @@ const AddPropertyScreen = ({ navigation }) => {
                         <Text style={styles.currentLocationButtonText}>Use Current Location</Text>
                       </>
                     )}
-                  </TouchableOpacity>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Display Selected Location */}
@@ -658,7 +818,7 @@ const AddPropertyScreen = ({ navigation }) => {
                     <Text style={styles.coordinatesText}>
                       Lat: {values.location.coordinates.coordinates[1]}, Lng: {values.location.coordinates.coordinates[0]}
                     </Text>
-                  </View>
+                </View>
                 ) : touched.location?.address && errors.location?.address ? (
                   <Text style={styles.errorText}>{errors.location?.address}</Text>
                 ) : null}
@@ -666,15 +826,15 @@ const AddPropertyScreen = ({ navigation }) => {
                 <Text style={styles.sectionTitle}>Upload Images</Text>
 
                 {/* Image Picker Button */}
-                <TouchableOpacity
+                        <TouchableOpacity
                   style={styles.uploadButton}
                   onPress={() => navigateToImagePicker(values, setFieldValue)}
-                >
+                        >
                   <Ionicons name="images-outline" size={24} color="#0066cc" />
                   <Text style={styles.uploadButtonText}>
                     {values.images.length > 0 ? `${values.images.length} Images Selected` : 'Upload Images'}
                   </Text>
-                </TouchableOpacity>
+                        </TouchableOpacity>
 
                 {touched.images && errors.images && (
                   <Text style={styles.errorText}>{errors.images}</Text>
@@ -684,7 +844,7 @@ const AddPropertyScreen = ({ navigation }) => {
 
                 {/* Contact Name */}
                 <Text style={styles.label}>Contact Name</Text>
-                <TextInput
+                      <TextInput
                   style={styles.input}
                   placeholder="Your Name"
                   value={values.contactInfo.name}
@@ -742,13 +902,13 @@ const AddPropertyScreen = ({ navigation }) => {
                 </View>
 
                 {/* Preview Button */}
-                <TouchableOpacity
+                    <TouchableOpacity
                   style={styles.previewButton}
                   onPress={() => navigateToPropertyPreview(values)}
                 >
                   <Ionicons name="eye-outline" size={20} color="#0066cc" />
                   <Text style={styles.previewButtonText}>Preview Listing</Text>
-                </TouchableOpacity>
+                    </TouchableOpacity>
 
                 {/* Submit Button (outside ScrollView for fixed position) */}
                 <View style={styles.spacer} />
@@ -778,6 +938,18 @@ const AddPropertyScreen = ({ navigation }) => {
                     return;
                   }
                   
+                  // Special validation for PG/Hostel properties
+                  if (values.propertyType === 'PG' || values.propertyType === 'Hostel') {
+                    if (!values.pgRoomType) {
+                      Alert.alert('Room Type Required', 'Please select a room type for your PG/Hostel');
+                      return;
+                    }
+                    if (!values.pgBathroomType) {
+                      Alert.alert('Bathroom Type Required', 'Please select a bathroom type for your PG/Hostel');
+                      return;
+                    }
+                  }
+                  
                   // Proceed with property submission
                   setIsLoading(true);
                   
@@ -800,11 +972,6 @@ const AddPropertyScreen = ({ navigation }) => {
                       price: parseFloat(values.price),
                       category: values.category,
                       propertyType: values.propertyType,
-                      bhk: values.bhk ? parseInt(values.bhk) : undefined,
-                      area: {
-                        value: parseFloat(values.areaValue),
-                        unit: values.areaUnit
-                      },
                       furnishing: values.furnishing,
                       amenities: Array.isArray(values.amenities) ? values.amenities : [],
                       // Use Cloudinary URLs instead of local file paths
@@ -830,10 +997,30 @@ const AddPropertyScreen = ({ navigation }) => {
                         showEmail: values.contactInfo?.showEmail ?? false
                       }
                     };
+
+                    // Add property type specific fields
+                    if (values.propertyType === 'PG' || values.propertyType === 'Hostel') {
+                      // For PG/Hostel properties, add required PG fields
+                      propertyData.pgRoomType = values.pgRoomType || 'Single';  // Provide default value
+                      propertyData.pgBathroomType = values.pgBathroomType || 'Shared'; // Provide default value
+                      propertyData.pgWifi = values.pgWifi || false;
+                      propertyData.pgLaundry = values.pgLaundry || false;
+                    } else {
+                      // For non-PG/Hostel properties, add BHK and area
+                      if (['Flat', 'House', 'Villa', 'Apartment'].includes(values.propertyType)) {
+                        propertyData.bhk = parseInt(values.bhk) || 1;
+                      }
+                      
+                      propertyData.area = {
+                        value: parseFloat(values.areaValue) || 0,
+                        unit: values.areaUnit || 'sqft'
+                      };
+                    }
+                    
+                    console.log('FINAL SUBMISSION PAYLOAD:', JSON.stringify(propertyData, null, 2));
                     
                     // Use SERVER_URL from centralized config for consistency
                     console.log('Starting API call to:', `${SERVER_URL}/api/properties`);
-                    console.log('With property data including Cloudinary images:', JSON.stringify(propertyData, null, 2));
                     
                     const response = await fetch(`${SERVER_URL}/api/properties`, {
                       method: 'POST',

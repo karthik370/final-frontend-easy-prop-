@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Share, Alert, FlatList, Linking } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Import centralized server configuration
 import { SERVER_URL } from '../config/ip-config';
@@ -24,6 +25,19 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
   
   const { user, userToken } = useContext(AuthContext);
 
+  // Check if the current user is the owner of this property
+  const isOwner = useMemo(() => {
+    if (!user || !property || !property.owner) return false;
+    return user._id === property.owner._id;
+  }, [user, property]);
+
+  // Display a message if the property is viewed by its owner
+  useEffect(() => {
+    if (isOwner && property) {
+      console.log('Property viewed by owner - view count will not increase');
+    }
+  }, [isOwner, property]);
+
   useEffect(() => {
     // If we already have the property from route params, we don't need to fetch it again
     if (!property && propertyId) {
@@ -35,36 +49,44 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
     }
   }, [propertyId, property]);
 
-  // DIRECT fetch property details from MongoDB Atlas
   const fetchPropertyDetails = async () => {
-    // Skip if we already have property data or no propertyId
-    if (property || !propertyId) return;
-    
     setIsLoading(true);
-    console.log('DIRECT FETCH: Getting property details from MongoDB Atlas...');
-    
     try {
-      // Use SERVER_URL from centralized config for consistency
-      const apiUrl = `${SERVER_URL}/api/properties/${propertyId}`;
-      console.log('Using centralized SERVER_URL for property details:', apiUrl);
+      // Fetch property details from API using propertyId
+      const response = await axios.get(`${SERVER_URL}/api/properties/${propertyId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          // Include auth token to track the viewer
+          'Authorization': userToken ? `Bearer ${userToken}` : ''
+        },
+        timeout: 10000 // 10 second timeout
+      });
       
-      // Simple fetch request
-      const response = await fetch(apiUrl);
-      
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status}`);
+      if (response.data) {
+        console.log('Property details fetched successfully:', response.data._id);
+        setProperty(response.data);
+      } else {
+        console.error('Property not found');
+        Alert.alert('Error', 'Could not fetch property details');
       }
-      
-      // Parse the JSON response directly
-      const data = await response.json();
-      console.log('PROPERTY DETAILS FROM MONGODB ATLAS:', data);
-      
-      setProperty(data);
-      setIsLoading(false);
     } catch (error) {
-      console.error('MONGODB ATLAS ERROR:', error.message);
+      console.error('Error fetching property details:', error);
+      Alert.alert(
+        'Error',
+        'Could not fetch property details. Please try again.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Retry', 
+            onPress: () => {
+              console.log('Retrying property fetch...');
+              fetchPropertyDetails();
+            }
+          }
+        ]
+      );
+    } finally {
       setIsLoading(false);
-      Alert.alert('Error', 'Could not fetch property details from MongoDB Atlas');
     }
   };
 
@@ -155,60 +177,95 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
     Linking.openURL(`tel:${property.contactInfo.phone}`);
   };
 
-  const handleChat = () => {
+  const handleChat = async () => {
     if (!userToken) {
       Alert.alert(
         'Authentication Required',
         'Please sign in to chat with the seller.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Sign In', onPress: () => navigation.navigate('Auth') }
+          { text: 'Sign In', onPress: () => navigation.navigate('LoginScreen') },
         ]
       );
       return;
     }
 
-    // Log the full property object to debug issues
-    console.log('Full property object:', JSON.stringify(property, null, 2));
+    console.log('Starting chat with property owner:', property);
+    console.log('Current user:', user);
     
-    // Check if we have full property data
-    if (!property || !property._id) {
-      Alert.alert('Error', 'Cannot start chat - property information is missing');
-      return;
+    // Ensure we have current user data before proceeding
+    try {
+      // Get user ID - try multiple sources to ensure we have it
+      const currentUserId = user?._id || 
+                           (user?.user && user.user._id) || 
+                           await getCurrentUserId();
+      
+      console.log('Current user ID for chat:', currentUserId);
+      
+      if (!currentUserId) {
+        console.error('Cannot start chat - user ID not available');
+        Alert.alert(
+          'Error',
+          'Could not identify your user account. Please try logging out and back in.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+      
+      // Navigate to chat with full user details
+      navigation.navigate('Chat', {
+        recipient: property.owner,
+        propertyId: property._id,
+        propertyTitle: property.title,
+        propertyImage: property.images && property.images.length > 0 
+          ? property.images[0] 
+          : null,
+        userName: user?.name || 'You',
+        currentUserId: currentUserId, // Pass current user ID explicitly
+      });
+    } catch (error) {
+      console.error('Error preparing chat:', error);
+      Alert.alert(
+        'Error',
+        'Could not start chat. Please try again later.',
+        [{ text: 'OK' }]
+      );
     }
+  };
 
-    // Create a valid owner object with default values if missing
-    const ownerInfo = {
-      _id: property.owner?._id || '000000000000000000000000',
-      name: property.owner?.name || 'Property Seller',
-      phone: property.owner?.phone || 'Not available',
-      email: property.owner?.email || 'contact@example.com'
-    };
-    
-    console.log('Starting chat with property owner:', ownerInfo);
-
-    // Create chat params with complete information
-    const chatParams = {
-      // Pass complete recipient object
-      recipient: ownerInfo,
-      propertyId: property._id,
-      propertyTitle: property.title || 'Property Listing',
-      // Add property image for the chat thumbnail if available
-      propertyImage: property.images && property.images.length > 0 ? property.images[0] : null,
-      // Add property owner name for the chat title
-      userName: ownerInfo.name
-    };
-
-    console.log('Chat navigation params:', chatParams);
-
-    // Navigate to Chat with the correct parameters (name must match Stack.Screen name)
-    navigation.navigate('Chat', chatParams);
-    
-    Alert.alert(
-      'Starting Chat',
-      `Connecting to ${ownerInfo.name}...`,
-      [{ text: 'OK' }]
-    );
+  // Helper function to get fresh user data
+  const refreshCurrentUser = async () => {
+    try {
+      const response = await axios.get(`${SERVER_URL}/api/users/me`, {
+        headers: {
+          'Authorization': `Bearer ${userToken}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+      throw error;
+    }
+  };
+  
+  // Helper function to get current user ID from token
+  const getCurrentUserId = async () => {
+    try {
+      // Try to get from AsyncStorage first
+      const userData = await AsyncStorage.getItem('userData');
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        if (parsed._id) return parsed._id;
+        if (parsed.user && parsed.user._id) return parsed.user._id;
+      }
+      
+      // If not found, try to refresh from server
+      const freshUser = await refreshCurrentUser();
+      return freshUser?._id;
+    } catch (error) {
+      console.error('Error getting current user ID:', error);
+      return null;
+    }
   };
 
   const handleShare = async () => {
@@ -303,6 +360,32 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
+  const getTagColor = () => {
+    if (property.propertyType === 'Hostel') {
+      return '#8e44ad'; // A distinct purple for Hostels
+    }
+    if (property.propertyType === 'PG') {
+      return '#ff6600'; // Orange for PGs
+    }
+    if (property.category === 'Sell') {
+      return '#25d366'; // Green for Sale
+    }
+    return '#0066cc'; // Blue for Rent
+  };
+
+  const getPropertyTag = () => {
+    if (property.propertyType === 'Hostel') {
+      return 'Hostel';
+    }
+    if (property.propertyType === 'PG') {
+      return 'PG';
+    }
+    if (property.category === 'Sell') {
+      return 'For Sale';
+    }
+    return 'For Rent';
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -375,12 +458,6 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
         
         {/* Top Header Actions */}
         <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={styles.backIconButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
           
           <View style={styles.rightHeaderActions}>
             <TouchableOpacity
@@ -407,11 +484,11 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
         <View 
           style={[
             styles.propertyTagContainer,
-            { backgroundColor: property.category === 'Sell' ? '#25d366' : '#0066cc' }
+            { backgroundColor: getTagColor() }
           ]}
         >
           <Text style={styles.propertyTagText}>
-            {property.category === 'Sell' ? 'For Sale' : 'For Rent'}
+            {getPropertyTag()}
           </Text>
         </View>
         
@@ -437,7 +514,8 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
           <View style={styles.featuresContainer}>
             <Text style={styles.sectionTitle}>Key Features</Text>
             <View style={styles.featuresGrid}>
-              {property.bhk && (
+              {/* Show BHK for regular properties, and room type for PG/Hostel */}
+              {property.propertyType !== 'Hostel' && property.propertyType !== 'PG' && property.bhk && (
                 <View style={styles.featureItem}>
                   <Ionicons name="bed-outline" size={20} color="#0066cc" />
                   <Text style={styles.featureValue}>{property.bhk} BHK</Text>
@@ -445,6 +523,25 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
                 </View>
               )}
               
+              {/* Show PG/Hostel specific details */}
+              {(property.propertyType === 'Hostel' || property.propertyType === 'PG') && (
+                <View style={styles.featureItem}>
+                  <Ionicons name="bed-outline" size={20} color="#0066cc" />
+                  <Text style={styles.featureValue}>{property.pgRoomType || 'Room'}</Text>
+                  <Text style={styles.featureLabel}>Room Type</Text>
+                </View>
+              )}
+              
+              {/* Show PG/Hostel bathroom type */}
+              {(property.propertyType === 'Hostel' || property.propertyType === 'PG') && (
+                <View style={styles.featureItem}>
+                  <Ionicons name="water-outline" size={20} color="#0066cc" />
+                  <Text style={styles.featureValue}>{property.pgBathroomType || 'Shared'}</Text>
+                  <Text style={styles.featureLabel}>Bathroom</Text>
+                </View>
+              )}
+              
+              {/* Show area for all property types */}
               <View style={styles.featureItem}>
                 <Ionicons name="square-outline" size={20} color="#0066cc" />
                 <Text style={styles.featureValue}>
@@ -453,17 +550,37 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
                 <Text style={styles.featureLabel}>Carpet Area</Text>
               </View>
               
+              {/* Show furnishing for all property types */}
               <View style={styles.featureItem}>
                 <Ionicons name="home-outline" size={20} color="#0066cc" />
                 <Text style={styles.featureValue}>{property.furnishing}</Text>
                 <Text style={styles.featureLabel}>Furnishing</Text>
               </View>
               
+              {/* Show property type for all properties */}
               <View style={styles.featureItem}>
                 <Ionicons name="business-outline" size={20} color="#0066cc" />
                 <Text style={styles.featureValue}>{property.propertyType}</Text>
                 <Text style={styles.featureLabel}>Property Type</Text>
               </View>
+              
+              {/* Show WiFi status for PG/Hostel */}
+              {(property.propertyType === 'Hostel' || property.propertyType === 'PG') && (
+                <View style={styles.featureItem}>
+                  <Ionicons name="wifi-outline" size={20} color={property.pgWifi ? "#25d366" : "#999"} />
+                  <Text style={styles.featureValue}>{property.pgWifi ? "Available" : "Not Available"}</Text>
+                  <Text style={styles.featureLabel}>WiFi</Text>
+                </View>
+              )}
+              
+              {/* Show Laundry status for PG/Hostel */}
+              {(property.propertyType === 'Hostel' || property.propertyType === 'PG') && (
+                <View style={styles.featureItem}>
+                  <Ionicons name="shirt-outline" size={20} color={property.pgLaundry ? "#25d366" : "#999"} />
+                  <Text style={styles.featureValue}>{property.pgLaundry ? "Available" : "Not Available"}</Text>
+                  <Text style={styles.featureLabel}>Laundry</Text>
+                </View>
+              )}
             </View>
           </View>
           
@@ -471,6 +588,20 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
           <View style={styles.descriptionContainer}>
             <Text style={styles.sectionTitle}>Description</Text>
             <Text style={styles.description}>{property.description}</Text>
+          </View>
+          
+          {/* Property Stats */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Ionicons name="eye-outline" size={20} color="#0066cc" />
+              <Text style={styles.statValue}>{property.views || 0}</Text>
+              <Text style={styles.statLabel}>Views</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Ionicons name="calendar-outline" size={20} color="#0066cc" />
+              <Text style={styles.statValue}>{formatDate(property.createdAt)}</Text>
+              <Text style={styles.statLabel}>Posted</Text>
+            </View>
           </View>
           
           {/* Amenities */}
@@ -637,6 +768,7 @@ const styles = StyleSheet.create({
   },
   rightHeaderActions: {
     flexDirection: 'row',
+    paddingLeft:300,
   },
   iconButton: {
     width: 36,
@@ -650,7 +782,7 @@ const styles = StyleSheet.create({
   propertyTagContainer: {
     position: 'absolute',
     top: 10,
-    left: 50,
+    left: 10,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 5,
@@ -665,7 +797,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    marginTop: -20,
+    marginTop: -10,
     paddingBottom: 80, // Extra space for bottom bar
   },
   priceContainer: {
@@ -864,6 +996,28 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     marginLeft: 8,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
+    padding: 15,
+    marginVertical: 15,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 5,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 3,
   },
 });
 

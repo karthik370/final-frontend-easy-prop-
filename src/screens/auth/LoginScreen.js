@@ -14,6 +14,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../../context/AuthContext';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import { auth } from '../../config/firebase';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -21,8 +27,17 @@ const LoginScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  const { login, isLoading } = useContext(AuthContext);
+  const { login, isLoading, googleLogin } = useContext(AuthContext);
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    expoClientId: '402088305835-p2ganbq17plqr467o261jo6d34srg09n.apps.googleusercontent.com',
+    androidClientId: '402088305835-8keap038cuclsbcn6t2actb03uej3r81.apps.googleusercontent.com',
+    iosClientId: '<YOUR_IOS_CLIENT_ID>',
+    webClientId: '402088305835-p2ganbq17plqr467o261jo6d34srg09n.apps.googleusercontent.com',
+    responseType: 'id_token',
+  });
 
   const validateEmail = () => {
     const re = /\S+@\S+\.\S+/;
@@ -58,6 +73,87 @@ const LoginScreen = ({ navigation }) => {
       if (success) {
         // Login successful, navigation will be handled by AppNavigator
       }
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setGoogleLoading(true);
+      console.log('Starting Google sign-in...');
+      
+      const result = await promptAsync();
+      
+      if (result.type === 'success') {
+        const { id_token } = result.params;
+        
+        if (!id_token) {
+          Alert.alert('Google Sign-In Error', 'No id_token returned from Google.');
+          setGoogleLoading(false);
+          return;
+        }
+
+        try {
+          // Create credential
+          const credential = GoogleAuthProvider.credential(id_token);
+
+          // Sign in with credential
+          const userCredential = await signInWithCredential(auth, credential);
+          
+          const user = userCredential.user;
+          console.log('Firebase user object:', {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            phoneNumber: user.phoneNumber,
+            photoURL: user.photoURL,
+            providerData: user.providerData
+          });
+          
+          // Make sure we have the email from Google
+          if (!user.email && user.providerData && user.providerData.length > 0) {
+            const googleProvider = user.providerData.find(provider => provider.providerId === 'google.com');
+            if (googleProvider && googleProvider.email) {
+              console.log('Found email from provider data:', googleProvider.email);
+              // We'll use this email in the googleLogin function
+              user.email = googleProvider.email;
+            }
+          }
+          
+          const idToken = await user.getIdToken();
+
+          // Use the googleLogin method from AuthContext
+          const success = await googleLogin(user, idToken);
+          
+          if (success) {
+            console.log('Google login successful, user should be redirected to home screen');
+            // The AppNavigator will handle the navigation based on userToken
+          }
+        } catch (error) {
+          let title = 'Authentication Error';
+          let message = 'An unexpected error occurred. Please try again.';
+
+          if (error.code === 'ECONNABORTED') {
+            title = 'Server Not Responding';
+            message = 'Our server is taking too long to respond. Please try again later.';
+          } else if (error.response) {
+            message = error.response.data.message || 'An error occurred on the server.';
+          } else {
+            message = error.message;
+          }
+          
+          console.error('Google sign-in error:', error);
+          Alert.alert(title, message);
+        }
+      } else if (result.type === 'cancel') {
+        console.log('Google sign-in was canceled by the user');
+      } else {
+        Alert.alert('Sign-In Error', 'Could not sign in with Google. Please try again.');
+      }
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      Alert.alert('Google Sign-In Error', error.message || 'Failed to sign in with Google');
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -109,7 +205,10 @@ const LoginScreen = ({ navigation }) => {
           </View>
           {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
-          <TouchableOpacity style={styles.forgotPasswordContainer}>
+          <TouchableOpacity 
+            style={styles.forgotPasswordContainer}
+            onPress={() => navigation.navigate('ForgotPasswordScreen')}
+          >
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
@@ -132,11 +231,21 @@ const LoginScreen = ({ navigation }) => {
           </View>
 
           <TouchableOpacity
-            style={styles.phoneLoginButton}
-            onPress={() => navigation.navigate('PhoneLogin')}
+            style={styles.googleButton}
+            onPress={handleGoogleSignIn}
+            disabled={googleLoading}
           >
-            <Ionicons name="call-outline" size={20} color="#fff" style={styles.buttonIcon} />
-            <Text style={styles.phoneLoginButtonText}>Login with Phone Number</Text>
+            {googleLoading ? (
+              <View style={styles.loadingButtonContent}>
+                <ActivityIndicator color="#4285F4" size="small" />
+                <Text style={{color: '#4285F4', marginLeft: 10, fontWeight: 'bold'}}>Connecting...</Text>
+              </View>
+            ) : (
+              <View style={styles.googleButtonContent}>
+                <Ionicons name="logo-google" size={20} color="#4285F4" style={styles.buttonIcon} />
+                <Text style={styles.googleButtonText}>Login with Google</Text>
+              </View>
+            )}
           </TouchableOpacity>
 
           <View style={styles.registerContainer}>
@@ -161,7 +270,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
-
   formContainer: {
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -246,22 +354,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     fontSize: 14,
   },
-  phoneLoginButton: {
-    backgroundColor: '#ff6600',
+  googleButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#4285F4',
     borderRadius: 8,
     height: 50,
-    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
   },
+  googleButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   buttonIcon: {
     marginRight: 10,
   },
-  phoneLoginButtonText: {
-    color: '#fff',
+  googleButtonText: {
+    color: '#4285F4',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  loadingButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   registerContainer: {
     flexDirection: 'row',

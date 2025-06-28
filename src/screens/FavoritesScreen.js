@@ -14,122 +14,34 @@ import axios from 'axios';
 // Using centralized SERVER_URL config
 import { SERVER_URL } from '../config/ip-config';
 import { AuthContext } from '../context/AuthContext';
+import { FavoritesContext } from '../context/FavoritesContext';
 
 // Components
 import PropertyCard from '../components/PropertyCard';
 
 const FavoritesScreen = ({ navigation }) => {
-  const [favorites, setFavorites] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  
   const { userToken } = useContext(AuthContext);
+  const { favoriteProperties, loading, reloadFavorites } = useContext(FavoritesContext);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    if (userToken) {
-      fetchFavorites();
-    } else {
-      setIsLoading(false);
-    }
-  }, [userToken]);
-
-  // Add a focus listener to refresh data when screen is focused
+  // Refresh favorites on screen focus
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      if (userToken) {
-        fetchFavorites();
-      }
+      if (userToken) reloadFavorites();
     });
-
     return unsubscribe;
   }, [navigation, userToken]);
 
-  // DIRECT fetch favorites from MongoDB Atlas
-  const fetchFavorites = async () => {
-    if (!userToken) {
-      setIsLoading(false);
-      return;
-    }
+  // Initial fetch on mount
+  useEffect(() => {
+    if (userToken) reloadFavorites();
+  }, [userToken]);
 
-    setIsLoading(true);
-    console.log('DIRECT FETCH: Getting favorites from MongoDB Atlas...');
-    
-    try {
-      // Use SERVER_URL from centralized config for consistency
-      const apiUrl = `${SERVER_URL}/api/properties/favorites`;
-      console.log('Using centralized SERVER_URL for favorites:', apiUrl);
-      
-      // Simple fetch request with authentication
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Authorization': `Bearer ${userToken}` // Add auth token for user-specific favorites
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status}`);
-      }
-      
-      // Parse the JSON response directly
-      const data = await response.json();
-      console.log('RAW FAVORITES FROM MONGODB ATLAS:', data);
-      
-      setFavorites(data);
-      setIsLoading(false);
-      setRefreshing(false);
-    } catch (error) {
-      console.error('Error fetching favorites:', error.message);
-      setIsLoading(false);
-      setRefreshing(false);
-      // No mock data - just show empty state
-      setFavorites([]);
-      Alert.alert('Connection Error', 'Could not retrieve your favorites. Please check your connection and try again.');
-    }
-  };
-
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
-    fetchFavorites();
+    await reloadFavorites();
+    setRefreshing(false);
   };
-
-  const removeFavorite = async (propertyId) => {
-    try {
-      // Remove from UI immediately for better UX
-      setFavorites(favorites.filter(favorite => favorite._id !== propertyId));
-      
-      // Make API call to remove from server using centralized SERVER_URL
-      await axios.delete(`${SERVER_URL}/api/properties/${propertyId}/favorite`, {
-        headers: {
-          'Authorization': `Bearer ${userToken}`
-        }
-      });
-      
-      Alert.alert('Success', 'Property removed from favorites');
-    } catch (error) {
-      console.error('Remove favorite error:', error);
-      
-      // Fetch all favorites again in case of error to ensure UI is in sync
-      fetchFavorites();
-      Alert.alert('Error', 'Failed to remove from favorites');
-    }
-  };
-
-  const handleRemove = (propertyId) => {
-    Alert.alert(
-      'Remove Favorite',
-      'Are you sure you want to remove this property from your favorites?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => removeFavorite(propertyId),
-        },
-      ]
-    );
-  };
-
-  // Favorites will be fetched only from the server, no mock data
 
   // If not logged in, show login prompt
   if (!userToken) {
@@ -150,7 +62,7 @@ const FavoritesScreen = ({ navigation }) => {
     );
   }
 
-  if (isLoading && !refreshing) {
+  if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0066cc" />
@@ -160,7 +72,7 @@ const FavoritesScreen = ({ navigation }) => {
   }
 
   // If logged in but no favorites
-  if (favorites.length === 0) {
+  if (!favoriteProperties || favoriteProperties.length === 0) {
     return (
       <View style={styles.emptyContainer}>
         <Ionicons name="heart-outline" size={80} color="#ddd" />
@@ -181,7 +93,7 @@ const FavoritesScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <FlatList
-        data={favorites}
+        data={favoriteProperties.filter(Boolean)}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <View style={styles.favoriteItemContainer}>
@@ -189,13 +101,7 @@ const FavoritesScreen = ({ navigation }) => {
               property={item}
               onPress={() => navigation.navigate('FavoritePropertyDetails', { propertyId: item._id })}
             />
-            <TouchableOpacity
-              style={styles.removeButton}
-              onPress={() => handleRemove(item._id)}
-            >
-              <Ionicons name="trash-outline" size={18} color="#ff6666" />
-              <Text style={styles.removeButtonText}>Remove</Text>
-            </TouchableOpacity>
+            {/* Optionally, add a remove button here if you want manual removal */}
           </View>
         )}
         refreshing={refreshing}
@@ -204,7 +110,7 @@ const FavoritesScreen = ({ navigation }) => {
         ListHeaderComponent={
           <View style={styles.header}>
             <Text style={styles.headerTitle}>My Favorite Properties</Text>
-            <Text style={styles.headerCount}>{favorites.length} properties</Text>
+            <Text style={styles.headerCount}>{favoriteProperties.length} properties</Text>
           </View>
         }
       />

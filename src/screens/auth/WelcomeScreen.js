@@ -1,23 +1,132 @@
-import React, { useContext } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useContext, useState } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { AuthContext } from '../../context/AuthContext';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import { auth } from '../../config/firebase';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import axios from 'axios';
+import { SERVER_URL } from '../../config/ip-config';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const WelcomeScreen = ({ navigation }) => {
-  const { guestLogin, isLoading } = useContext(AuthContext);
-  
+  const authCtx = useContext(AuthContext);
+  if (!authCtx) {
+    console.error('AuthContext is not available in WelcomeScreen!');
+    return null;
+  }
+  const { guestLogin, setUser, setUserToken, isLoading, googleLogin } = authCtx;
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    expoClientId: '402088305835-p2ganbq17plqr467o261jo6d34srg09n.apps.googleusercontent.com',
+    androidClientId: '402088305835-8keap038cuclsbcn6t2actb03uej3r81.apps.googleusercontent.com',
+    iosClientId: '<YOUR_IOS_CLIENT_ID>',
+    webClientId: '402088305835-p2ganbq17plqr467o261jo6d34srg09n.apps.googleusercontent.com',
+    responseType: 'id_token',
+  });
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setGoogleLoading(true);
+      console.log('Starting Google sign-in...');
+      
+      const result = await promptAsync();
+      
+      if (result.type === 'success') {
+        const { id_token } = result.params;
+        
+        if (!id_token) {
+          Alert.alert('Google Sign-In Error', 'No id_token returned from Google.');
+          setGoogleLoading(false);
+          return;
+        }
+
+        try {
+          // Create credential
+          const credential = GoogleAuthProvider.credential(id_token);
+
+          // Sign in with credential
+          const userCredential = await signInWithCredential(auth, credential);
+          
+          const user = userCredential.user;
+          console.log('Firebase user object:', {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            phoneNumber: user.phoneNumber,
+            photoURL: user.photoURL,
+            providerData: user.providerData
+          });
+          
+          // Make sure we have the email from Google
+          if (!user.email && user.providerData && user.providerData.length > 0) {
+            const googleProvider = user.providerData.find(provider => provider.providerId === 'google.com');
+            if (googleProvider && googleProvider.email) {
+              console.log('Found email from provider data:', googleProvider.email);
+              // We'll use this email in the googleLogin function
+              user.email = googleProvider.email;
+            }
+          }
+          
+          const idToken = await user.getIdToken();
+          
+          console.log('Google user info:', {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            phoneNumber: user.phoneNumber,
+            photoURL: user.photoURL
+          });
+
+          // Use the googleLogin method from AuthContext
+          const success = await googleLogin(user, idToken);
+          
+          if (success) {
+            console.log('Google login successful, user should be redirected to home screen');
+            // The AppNavigator will handle the navigation based on userToken
+          }
+        } catch (error) {
+          let title = 'Authentication Error';
+          let message = 'An unexpected error occurred. Please try again.';
+
+          if (error.code === 'ECONNABORTED') {
+            title = 'Server Not Responding';
+            message = 'Our server is taking too long to respond. Please try again later.';
+          } else if (error.response) {
+            message = error.response.data.message || 'An error occurred on the server.';
+          } else {
+            message = error.message;
+          }
+          
+          console.error('Google sign-in error:', error);
+          Alert.alert(title, message);
+        }
+      } else if (result.type === 'cancel') {
+        console.log('Google sign-in was canceled by the user');
+      } else {
+        Alert.alert('Sign-In Error', 'Could not sign in with Google. Please try again.');
+      }
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      Alert.alert('Google Sign-In Error', error.message || 'Failed to sign in with Google');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   const handleGuestLogin = async () => {
     try {
-      // Simply call guestLogin - it now sets a token which will trigger navigation
       const success = await guestLogin();
-      // The AppNavigator will automatically navigate to Main when token is set
       console.log('Guest login completed:', success);
     } catch (error) {
       console.error('Guest login error:', error);
     }
   };
-  
+
   return (
     <LinearGradient
       colors={['#0066cc', '#4da6ff', '#0066cc']}
@@ -26,14 +135,14 @@ const WelcomeScreen = ({ navigation }) => {
       <StatusBar style="light" />
       <View style={styles.container}>
         <View style={styles.logoContainer}>
-          <Text style={styles.logo}>Esay RealEstate</Text>
+          <Text style={styles.logo}>Home Zest</Text>
           <Text style={styles.tagline}>Find your dream property</Text>
         </View>
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[styles.button, styles.loginButton]}
-            onPress={() => navigation.navigate('Login')}
+            onPress={() => navigation.navigate('LoginScreen')}
           >
             <Text style={styles.buttonText}>Sign In</Text>
           </TouchableOpacity>
@@ -46,10 +155,18 @@ const WelcomeScreen = ({ navigation }) => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.button, styles.phoneButton]}
-            onPress={() => navigation.navigate('PhoneLogin')}
+            style={[styles.button, styles.googleButton]}
+            onPress={handleGoogleSignIn}
+            disabled={googleLoading}
           >
-            <Text style={styles.buttonText}>Login with Phone</Text>
+            {googleLoading ? (
+              <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
+                <ActivityIndicator color="#4285F4" size="small" />
+                <Text style={{color: '#4285F4', marginLeft: 10, fontWeight: 'bold'}}>Connecting...</Text>
+              </View>
+            ) : (
+              <Text style={[styles.buttonText, { color: '#4285F4', fontWeight: 'bold' }]}>Login with Google</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -120,8 +237,11 @@ const styles = StyleSheet.create({
   registerButton: {
     backgroundColor: '#25d366',
   },
-  phoneButton: {
-    backgroundColor: '#ff6600',
+  googleButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#4285F4',
+    marginBottom: 10,
   },
   guestButton: {
     backgroundColor: 'transparent',
@@ -137,6 +257,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
   },
+  loadingButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }
 });
 
 export default WelcomeScreen;

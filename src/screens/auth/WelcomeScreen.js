@@ -23,7 +23,7 @@ const WelcomeScreen = ({ navigation }) => {
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     expoClientId: '402088305835-p2ganbq17plqr467o261jo6d34srg09n.apps.googleusercontent.com',
-    androidClientId: '402088305835-8keap038cuclsbcn6t2actb03uej3r81.apps.googleusercontent.com',
+    // androidClientId: '402088305835-8keap038cuclsbcn6t2actb03uej3r81.apps.googleusercontent.com',
     iosClientId: '<YOUR_IOS_CLIENT_ID>',
     webClientId: '402088305835-p2ganbq17plqr467o261jo6d34srg09n.apps.googleusercontent.com',
     responseType: 'id_token',

@@ -33,14 +33,9 @@ const LoginScreen = ({ navigation }) => {
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     expoClientId: '402088305835-p2ganbq17plqr467o261jo6d34srg09n.apps.googleusercontent.com',
-<<<<<<< HEAD
-    //androidClientId: '402088305835-8keap038cuclsbcn6t2actb03uej3r81.apps.googleusercontent.com',
-=======
-    // androidClientId: '402088305835-8keap038cuclsbcn6t2actb03uej3r81.apps.googleusercontent.com',
->>>>>>> e09b433e30c445ac10a48e821a05d0542bf55ce4
+    androidClientId: '402088305835-8keap038cuclsbcn6t2actb03uej3r81.apps.googleusercontent.com',
     iosClientId: '<YOUR_IOS_CLIENT_ID>',
     webClientId: '402088305835-p2ganbq17plqr467o261jo6d34srg09n.apps.googleusercontent.com',
-    responseType: 'id_token',
   });
 
   const validateEmail = () => {
@@ -88,17 +83,25 @@ const LoginScreen = ({ navigation }) => {
       const result = await promptAsync();
       
       if (result.type === 'success') {
-        const { id_token } = result.params;
+        const { access_token } = result.params;
         
-        if (!id_token) {
-          Alert.alert('Google Sign-In Error', 'No id_token returned from Google.');
+        if (!access_token) {
+          Alert.alert('Google Sign-In Error', 'No access token returned from Google.');
           setGoogleLoading(false);
           return;
         }
 
         try {
-          // Create credential
-          const credential = GoogleAuthProvider.credential(id_token);
+          // Get user info with the access token
+          const response = await fetch('https://www.googleapis.com/userinfo/v2/me', {
+            headers: { Authorization: `Bearer ${access_token}` },
+          });
+          
+          const userInfo = await response.json();
+          console.log('Google user info:', userInfo);
+          
+          // Create a custom Firebase credential
+          const credential = GoogleAuthProvider.credential(null, access_token);
 
           // Sign in with credential
           const userCredential = await signInWithCredential(auth, credential);
@@ -118,7 +121,6 @@ const LoginScreen = ({ navigation }) => {
             const googleProvider = user.providerData.find(provider => provider.providerId === 'google.com');
             if (googleProvider && googleProvider.email) {
               console.log('Found email from provider data:', googleProvider.email);
-              // We'll use this email in the googleLogin function
               user.email = googleProvider.email;
             }
           }

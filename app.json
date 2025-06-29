@@ -4,16 +4,12 @@
     "slug": "easy-realestate-app",
     "owner": "karthi370",
     "version": "1.0.0",
-    "sdkVersion": "48.0.0",
     "platforms": [
       "ios",
       "android"
     ],
     "orientation": "portrait",
-    "icon": null,
     "splash": {
-      "image": null,
-      "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "updates": {
@@ -44,10 +40,6 @@
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyA_Dun255HHND3b_lX5N05zvGT77NhDeCI"
-        },
-        "googleSignIn": {
-          "apiKey": "AIzaSyBbMy8x3rNPoySTTPn490YsBMj54ONX_rU",
-          "certificateHash": "25:85:F8:8C:07:B4:B0:8D:DA:09:07:2A:6B:C4:06:83:4C:69:39:2D"
         }
       },
       "permissions": [

@@ -155,10 +155,17 @@ export const AuthProvider = ({ children }) => {
       
       console.log('Google login payload:', payload);
       
-      // Make the API call
-      const response = await axios.post(`${SERVER_URL}/api/auth/firebase`, payload, {
-        timeout: 15000 // 15 seconds timeout
-      });
+      // Make the API call with Firebase ID token in Authorization header
+      const response = await axios.post(
+        `${SERVER_URL}/api/auth/firebase`,
+        payload,
+        {
+          timeout: 15000, // 15 seconds timeout
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        }
+      );
       
       if (response.data) {
         const { token, ...userData } = response.data;

@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { StatusBar, Alert, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { StatusBar, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+
+// Navigation
+import { NavigationContainer } from '@react-navigation/native';
 
 // Context Providers
 import { AuthProvider } from './src/context/AuthContext';
 import { LocationProvider } from './src/context/LocationContext';
 import { FavoritesProvider } from './src/context/FavoritesContext';
-import { ConfirmationResultProvider } from './src/context/ConfirmationResultContext';
-import { FirebaseAuthProvider } from './src/context/FirebaseAuthContext';
 
 // Expo Notifications
 import ExpoNotificationService from './src/services/ExpoNotificationService';
@@ -17,7 +17,6 @@ import * as Notifications from 'expo-notifications';
 
 // Navigation Stacks
 import AppNavigator from './src/navigation/AppNavigator';
-import AuthTester from './src/utils/AuthTester';
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -28,24 +27,10 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const MyTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: '#0066CC',
-    background: '#FFFFFF',
-    card: '#FFFFFF',
-    text: '#333333',
-    border: '#E0E0E0',
-    notification: '#FF3B30',
-  },
-};
-
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [userToken, setUserToken] = useState(null);
   const navigationRef = useRef(null);
-  const [showAuthTester, setShowAuthTester] = useState(false);
   
   // Check for stored user token and set up notifications
   useEffect(() => {
@@ -103,80 +88,18 @@ export default function App() {
     return cleanup;
   }, []);
 
-  if (showAuthTester) {
-    return (
-      <SafeAreaProvider>
-        <AuthProvider>
-          <View style={{ flex: 1 }}>
-            <AuthTester />
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={() => setShowAuthTester(false)}
-            >
-              <Text style={styles.backButtonText}>Back to App</Text>
-            </TouchableOpacity>
-          </View>
-        </AuthProvider>
-      </SafeAreaProvider>
-    );
-  }
-
   return (
-    <SafeAreaProvider>
+    <NavigationContainer ref={navigationRef}>
       <AuthProvider>
-        <FirebaseAuthProvider>
-          <ConfirmationResultProvider>
-            <FavoritesProvider>
-              <LocationProvider>
-                <NavigationContainer theme={MyTheme}>
-                  <StatusBar style="auto" />
-                  <AppNavigator />
-                </NavigationContainer>
-                <View style={styles.testerContainer}>
-                  <TouchableOpacity
-                    style={styles.testerButton}
-                    onPress={() => setShowAuthTester(true)}
-                  >
-                    <Text style={styles.testerButtonText}>Auth Tester</Text>
-                  </TouchableOpacity>
-                </View>
-              </LocationProvider>
-            </FavoritesProvider>
-          </ConfirmationResultProvider>
-        </FirebaseAuthProvider>
+        <LocationProvider>
+          <FavoritesProvider>
+            <SafeAreaProvider>
+              <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+              <AppNavigator />
+            </SafeAreaProvider>
+          </FavoritesProvider>
+        </LocationProvider>
       </AuthProvider>
-    </SafeAreaProvider>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  testerContainer: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    zIndex: 1000,
-  },
-  testerButton: {
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  testerButtonText: {
-    color: 'white',
-    fontSize: 12,
-  },
-  backButton: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    backgroundColor: '#0066CC',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  backButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-});

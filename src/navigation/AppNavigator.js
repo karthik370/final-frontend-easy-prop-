@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -17,6 +17,7 @@ const AppNavigator = () => {
   const { userToken, isLoading, isLoggedIn } = useContext(AuthContext);
   const [initializing, setInitializing] = useState(true);
   const [isFirstLaunch, setIsFirstLaunch] = useState(null);
+  const [error, setError] = useState(null);
 
   // 2. First useEffect - check login status
   useEffect(() => {
@@ -26,6 +27,7 @@ const AppNavigator = () => {
         console.log('AppNavigator initialized, login status checked');
       } catch (error) {
         console.error('Login check error:', error);
+        setError('Failed to check login status: ' + error.message);
       } finally {
         setInitializing(false);
       }
@@ -65,6 +67,26 @@ const AppNavigator = () => {
     }
   }, [userToken, initializing]);
 
+  // Error state
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorTitle}>Something went wrong</Text>
+        <Text style={styles.errorMessage}>{error}</Text>
+        <TouchableOpacity 
+          style={styles.errorButton}
+          onPress={() => {
+            setError(null);
+            setInitializing(true);
+            isLoggedIn().finally(() => setInitializing(false));
+          }}
+        >
+          <Text style={styles.errorButtonText}>Try Again</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   // Loading state while checking login or first launch
   if (initializing || isLoading || isFirstLaunch === null) {
     return (
@@ -93,5 +115,38 @@ const AppNavigator = () => {
     </Stack.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#FF3B30',
+  },
+  errorMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#333',
+  },
+  errorButton: {
+    backgroundColor: '#0066cc',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  errorButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
 
 export default AppNavigator;

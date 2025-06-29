@@ -22,6 +22,7 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+    "scheme": "easy-realestate-app",
     "extra": {
       "googleMapsApiKey": "AIzaSyA_Dun255HHND3b_lX5N05zvGT77NhDeCI",
       "firebase": {
@@ -43,6 +44,10 @@
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyA_Dun255HHND3b_lX5N05zvGT77NhDeCI"
+        },
+        "googleSignIn": {
+          "apiKey": "AIzaSyBbMy8x3rNPoySTTPn490YsBMj54ONX_rU",
+          "certificateHash": "25:85:F8:8C:07:B4:B0:8D:DA:09:07:2A:6B:C4:06:83:4C:69:39:2D"
         }
       },
       "permissions": [

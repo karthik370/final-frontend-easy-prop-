@@ -160,7 +160,7 @@ export const AuthProvider = ({ children }) => {
         timeout: 15000 // 15 seconds timeout
       });
       
-      if (response.data.success) {
+      if (response.data) {
         const { token, ...userData } = response.data;
         
         // Ensure email is included in user data
@@ -190,7 +190,7 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(false);
         return true;
       } else {
-        throw new Error(response.data.message || 'Failed to authenticate with Google');
+        throw new Error('Failed to authenticate with Google');
       }
     } catch (error) {
       console.error('Google login error:', error);

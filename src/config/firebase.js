@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import Constants from 'expo-constants';
 
 // Firebase configuration from app.json
@@ -23,5 +23,11 @@ if (getApps().length === 0) {
 
 // Get Firebase auth instance
 export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
+
+// Configure Google Auth Provider
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 export default app;

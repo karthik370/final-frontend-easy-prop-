@@ -13,17 +13,17 @@ const Stack = createNativeStackNavigator();
 const AuthNavigator = () => {
   return (
     <Stack.Navigator
-      screenOptions={{
+          screenOptions={{
         headerShown: false,
-      }}
-    >
+          }}
+        >
       <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} />
       <Stack.Screen name="LoginScreen" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="PhoneLoginScreen" component={PhoneLoginScreen} />
       <Stack.Screen name="OtpVerificationScreen" component={OtpVerificationScreen} />
       <Stack.Screen name="ForgotPasswordScreen" component={ForgotPasswordScreen} />
-    </Stack.Navigator>
+        </Stack.Navigator>
   );
 };
 

@@ -15,7 +15,7 @@ const AboutApp = () => {
         <View style={styles.logoContainer}>
           <Ionicons name="home" size={80} color="#fff" />
         </View>
-        <Text style={styles.appName}>Property Pulse</Text>
+        <Text style={styles.appName}>Home Zest</Text>
         <Text style={styles.appVersion}>Version 1.0.0</Text>
       </View>
 
@@ -23,7 +23,7 @@ const AboutApp = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About Our App</Text>
         <Text style={styles.description}>
-          Property Pulse is a modern real estate marketplace designed to connect property owners with potential buyers and renters. Our platform offers a seamless experience for listing, discovering, and transacting real estate properties.
+          Home Zest is a modern real estate marketplace designed to connect property owners with potential buyers and renters. Our platform offers a seamless experience for listing, discovering, and transacting real estate properties.
         </Text>
       </View>
 
@@ -137,7 +137,7 @@ const AboutApp = () => {
 
       {/* Copyright */}
       <View style={styles.footer}>
-        <Text style={styles.copyright}>© 2023 Property Pulse. All rights reserved.</Text>
+        <Text style={styles.copyright}>© 2025 Home Zest. All rights reserved.</Text>
       </View>
     </ScrollView>
   );

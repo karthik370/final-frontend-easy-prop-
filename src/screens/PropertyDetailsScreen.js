@@ -209,9 +209,9 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
           'Could not identify your user account. Please try logging out and back in.',
           [{ text: 'OK' }]
         );
-        return;
-      }
-      
+      return;
+    }
+
       // Navigate to chat with full user details
       navigation.navigate('Chat', {
         recipient: property.owner,
@@ -230,7 +230,7 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
         'Could not start chat. Please try again later.',
         [{ text: 'OK' }]
       );
-    }
+        }
   };
 
   // Helper function to get fresh user data

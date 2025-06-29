@@ -106,7 +106,7 @@ const HelpSupport = () => {
       <View style={styles.supportCommitment}>
         <Text style={styles.commitmentTitle}>Our Support Commitment</Text>
         <Text style={styles.commitmentText}>
-          At Property Pulse, we're committed to providing excellent customer service. Our dedicated support team works tirelessly to ensure you have the best experience using our platform. Whether you're buying, selling, or renting, we're here to help every step of the way.
+          At Home Zest, we're committed to providing excellent customer service. Our dedicated support team works tirelessly to ensure you have the best experience using our platform. Whether you're buying, selling, or renting, we're here to help every step of the way.
         </Text>
       </View>
     </ScrollView>

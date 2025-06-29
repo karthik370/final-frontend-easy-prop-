@@ -26,7 +26,7 @@ const HomeStack = () => {
       <Stack.Screen 
         name="Home" 
         component={HomeScreen} 
-        options={{ title: 'PropertyPulse' }}
+        options={{ title: 'Home Zest' }}
       />
       <Stack.Screen 
         name="PropertyDetails" 

@@ -23,15 +23,17 @@ export const AuthProvider = ({ children }) => {
   }, [userToken]);
 
   // Login with email/password
-  const login = async (email, password) => {
+  const login = async (emailOrPhone, password) => {
     setIsLoading(true);
     setError(null);
-    
     try {
-      const response = await axios.post(`${SERVER_URL}/api/auth/login`, {
-        email,
-        password
-      });
+      // Determine if input is phone (10+ digits, e.g., with or without country code), otherwise treat as email
+      const isPhone = /^\d{10,15}$/.test(emailOrPhone);
+      const payload = isPhone
+        ? { phone: emailOrPhone, password }
+        : { email: emailOrPhone, password };
+      // This allows login with phone numbers like 8286739111 or 918286739111
+      const response = await axios.post(`${SERVER_URL}/api/auth/login`, payload);
       
       const { token, ...userData } = response.data;
       

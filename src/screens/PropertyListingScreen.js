@@ -173,9 +173,16 @@ const PropertyListingScreen = ({ route, navigation }) => {
           console.log(`Filtered to ${filteredProperties.length} properties for sale`);
         } 
         else if (category === 'Rent') {
-          // For Rent category, filter to only show 'Rent' properties
-          filteredProperties = allProperties.filter(prop => prop.category === 'Rent');
-          console.log(`Filtered to ${filteredProperties.length} properties for rent`);
+          // For Rent category, filter to only show 'Rent' properties and EXCLUDE PG/Hostel
+          filteredProperties = allProperties.filter(
+            prop => 
+              prop.category === 'Rent' &&
+              prop.propertyType !== 'PG' &&
+              prop.propertyType !== 'Hostel' &&
+              prop.propertyType !== 'pg' &&
+              prop.propertyType !== 'hostel'
+          );
+          console.log(`Filtered to ${filteredProperties.length} properties for rent (excluding PG/Hostel)`);
         }
         else if (category === 'PG/Hostel' || category === 'PG') {
           // STRICT FILTERING: For PG/Hostel category, ONLY show properties with PG or Hostel property type

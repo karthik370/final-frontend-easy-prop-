@@ -213,6 +213,7 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
     }
 
       // Navigate to chat with full user details
+      // Always pass property owner as recipient and current userId for unique conversation logic
       navigation.navigate('Chat', {
         recipient: property.owner,
         propertyId: property._id,
@@ -221,7 +222,8 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
           ? property.images[0] 
           : null,
         userName: user?.name || 'You',
-        currentUserId: currentUserId, // Pass current user ID explicitly
+        currentUserId: currentUserId, // Ensures backend/frontend match for conversation uniqueness
+        property: property // Pass full property object for owner/participant checks
       });
     } catch (error) {
       console.error('Error preparing chat:', error);

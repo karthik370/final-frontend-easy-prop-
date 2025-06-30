@@ -160,8 +160,8 @@ const styles = StyleSheet.create({
   addPropertyText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
-    fontSize: 16,
-    marginLeft: 8,
+    fontSize: 13,
+    marginLeft: 1,
   }
 });
 

@@ -212,18 +212,45 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
       return;
     }
 
-      // Navigate to chat with full user details
-      // Always pass property owner as recipient and current userId for unique conversation logic
+      // Always pass receiverId as the owner's ID
+      // Add robust logging for all parameters
+      // Robustly extract ownerId and ownerData
+      let ownerId;
+      let ownerData;
+      if (property && property.owner) {
+        if (typeof property.owner === 'object' && property.owner._id) {
+          ownerId = property.owner._id;
+          ownerData = property.owner;
+        } else if (typeof property.owner === 'string') {
+          ownerId = property.owner;
+          // Try to get name/email/phone from contactInfo if available
+          ownerData = { _id: ownerId, ...(property.contactInfo || {}) };
+        }
+      }
+      if (!ownerId) {
+        console.error('Could not determine property owner ID for chat. Property:', property);
+        Alert.alert('Error', 'Could not determine property owner for chat.');
+        return;
+      }
+      console.log('Navigating to Chat with:', {
+        recipient: ownerData,
+        receiverId: ownerId,
+        propertyId: property._id,
+        propertyTitle: property.title,
+        propertyImage: property.images && property.images.length > 0 ? property.images[0] : null,
+        userName: user?.name || 'You',
+        currentUserId
+      });
       navigation.navigate('Chat', {
-        recipient: property.owner,
+        recipient: ownerData,
+        receiverId: ownerId, // Critical for backend messaging logic
         propertyId: property._id,
         propertyTitle: property.title,
         propertyImage: property.images && property.images.length > 0 
           ? property.images[0] 
           : null,
         userName: user?.name || 'You',
-        currentUserId: currentUserId, // Ensures backend/frontend match for conversation uniqueness
-        property: property // Pass full property object for owner/participant checks
+        currentUserId // Always pass sender's user ID
       });
     } catch (error) {
       console.error('Error preparing chat:', error);

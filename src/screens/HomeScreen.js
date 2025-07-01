@@ -336,73 +336,15 @@ const HomeScreen = ({ navigation }) => {
           </View>
         ) : (
           <FlatList
-            data={properties.slice(0, 5)} // Show only first 5 properties on home screen
+            data={properties
+              .slice()
+              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+              .slice(0, 5)} // Show 5 most recently added properties
             renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.propertyCard}
+              <PropertyCard
+                property={item}
                 onPress={() => navigation.navigate('PropertyDetails', { property: item })}
-              >
-                {/* Property Image */}
-                <View style={styles.propertyImageContainer}>
-                  <Image
-                    source={
-                      item.images && item.images.length > 0
-                        ? { uri: item.images[0] }
-                        : { uri: 'https://via.placeholder.com/300x200?text=No+Image' }
-                    }
-                    style={styles.propertyImage}
-                    resizeMode="cover"
-                  />
-                  <View style={styles.propertyCategory}>
-                    <Text style={styles.propertyCategoryText}>
-                      {item.category === 'Sell' ? 'For Sale' :
-                        item.category === 'Rent' ? 'For Rent' : 'PG/Hostel'}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Property Details */}
-                <View style={styles.propertyDetails}>
-                  <Text style={styles.propertyPrice}>₹{item.price?.toLocaleString() || 'Price on request'}</Text>
-                  <Text style={styles.propertyTitle} numberOfLines={1}>{item.title || 'Property Title'}</Text>
-
-                  {/* Location */}
-                  <View style={styles.propertyLocationContainer}>
-                    <Ionicons name="location" size={16} color="#777" />
-                    <Text style={styles.propertyLocation} numberOfLines={1}>
-                      {item.location?.address || 'Location not specified'}
-                    </Text>
-                  </View>
-
-                  {/* Property Features */}
-                  <View style={styles.propertyFeaturesContainer}>
-                    {item.bedrooms && (
-                      <View style={styles.propertyFeature}>
-                        <Ionicons name="bed-outline" size={16} color="#555" />
-                        <Text style={styles.propertyFeatureText}>{item.bedrooms} Beds</Text>
-                      </View>
-                    )}
-                    {item.bathrooms && (
-                      <View style={styles.propertyFeature}>
-                        <Ionicons name="water-outline" size={16} color="#555" />
-                        <Text style={styles.propertyFeatureText}>{item.bathrooms} Baths</Text>
-                      </View>
-                    )}
-                    {item.area && (
-                      <View style={styles.propertyFeature}>
-                        <MaterialIcons name="square-foot" size={16} color="#555" />
-                        <Text style={styles.propertyFeatureText}>
-                          {typeof item.area === 'object' && item.area.value
-                            ? `${item.area.value} ${item.area.unit || item.areaUnit || 'sq.ft'}`
-                            : typeof item.area === 'number' || typeof item.area === 'string'
-                              ? `${item.area} ${item.areaUnit || 'sq.ft'}`
-                              : 'Area not specified'}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </TouchableOpacity>
+              />
             )}
             keyExtractor={item => item._id || Math.random().toString()}
             contentContainerStyle={styles.propertiesList}

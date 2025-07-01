@@ -489,16 +489,6 @@ const PropertyDetailsScreen = ({ route, navigation }) => {
         <View style={styles.headerActions}>
           
           <View style={styles.rightHeaderActions}>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={toggleFavorite}
-            >
-              <Ionicons
-                name={isFavorite ? 'heart' : 'heart-outline'}
-                size={24}
-                color={isFavorite ? '#ff6666' : '#fff'}
-              />
-            </TouchableOpacity>
             
             <TouchableOpacity
               style={styles.iconButton}
@@ -797,7 +787,7 @@ const styles = StyleSheet.create({
   },
   rightHeaderActions: {
     flexDirection: 'row',
-    paddingLeft:300,
+    paddingLeft:350,
   },
   iconButton: {
     width: 36,

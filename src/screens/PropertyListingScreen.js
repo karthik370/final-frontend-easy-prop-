@@ -823,7 +823,7 @@ const PropertyListingScreen = ({ route, navigation }) => {
             
             {properties.length > 0 ? (
               <FlatList
-                data={properties}
+              data={properties.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))}
                 keyExtractor={item => item._id || Math.random().toString()}
                 renderItem={({ item }) => (
                   <PropertyCard 

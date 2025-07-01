@@ -257,10 +257,40 @@ const SearchScreen = ({ route, navigation }) => {
     }
   };
 
+  // Enhanced handleSearch: parses searchQuery and applies relevant filters before searching
   const handleSearch = () => {
+    let parsedFilters = { ...filters };
+    const query = searchQuery.trim().toLowerCase();
+    // Parse for category
+    if (query.includes('buy')) {
+      parsedFilters.category = 'Buy';
+    } else if (query.includes('rent')) {
+      parsedFilters.category = 'Rent';
+    } else if (query.includes('pg') || query.includes('hostel')) {
+      parsedFilters.category = 'PG/Hostel';
+    }
+    // Parse for BHK
+    const bhkMatch = query.match(/(\d+)\s*bhk/);
+    if (bhkMatch) {
+      parsedFilters.bhk = bhkMatch[1];
+    }
+    // Parse for city (if city is not already set)
+    if (!parsedFilters.city) {
+      const cityList = ['bangalore', 'mumbai', 'delhi', 'hyderabad', 'chennai', 'pune', 'kolkata'];
+      for (let city of cityList) {
+        if (query.includes(city)) {
+          parsedFilters.city = city.charAt(0).toUpperCase() + city.slice(1);
+          break;
+        }
+      }
+    }
+    // Parse for location/address (if not already set)
+    // Optionally, you can add more sophisticated NLP here
+    setFilters(parsedFilters);
     setCurrentPage(1);
-    loadProperties(1);
+    loadProperties(1, parsedFilters);
   };
+
 
   const handleLoadMore = () => {
     if (hasMore && !isLoading) {
@@ -279,7 +309,7 @@ const SearchScreen = ({ route, navigation }) => {
   };
 
   const handleViewMap = () => {
-    navigation.navigate('SearchViewMap', {
+    navigation.navigate('ViewMap', {
       searchQuery: searchQuery,
       filters: filters
     });
@@ -483,7 +513,7 @@ const SearchScreen = ({ route, navigation }) => {
           </View>
         ) : (
           <FlatList
-            data={properties}
+            data={(!initialQuery && Object.values(filters).every(v => v === '')) ? properties.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) : properties}
             keyExtractor={(item) => item._id.toString()}
             renderItem={({ item }) => (
               <PropertyCard

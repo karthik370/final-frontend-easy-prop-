@@ -382,13 +382,6 @@ const MyPropertiesScreen = ({ navigation }) => {
               <Text style={styles.modalOptionText}>View Details</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => editProperty(selectedProperty)}
-            >
-              <Ionicons name="create-outline" size={22} color="#0066cc" />
-              <Text style={styles.modalOptionText}>Edit Listing</Text>
-            </TouchableOpacity>
             
             {selectedProperty?.status === 'expired' && (
               <TouchableOpacity

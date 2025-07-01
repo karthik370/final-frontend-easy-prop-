@@ -81,7 +81,10 @@ const ViewMapScreen = ({ route, navigation }) => {
         if (status !== 'granted') {
           Alert.alert('Permission Denied', 'Location permission is needed to show your position on the map.');
         } else {
-          getCurrentLocation();
+          // Only get current location if NOT focusing on a specific property
+          if (!(propertyId && location)) {
+            getCurrentLocation();
+          }
         }
       } catch (error) {
         console.error('Error requesting location permissions:', error);
@@ -98,7 +101,6 @@ const ViewMapScreen = ({ route, navigation }) => {
         latitudeDelta: 0.02,
         longitudeDelta: 0.02
       };
-      
       // Update region state to focus on this property
       setRegion(newRegion);
     }

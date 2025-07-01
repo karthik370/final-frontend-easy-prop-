@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 // Screens
 import AddPropertyScreen from '../../screens/AddPropertyScreen';
+import EditPropertyScreen from '../../screens/EditPropertyScreen';
 import SimpleLocationPicker from '../../screens/SimpleLocationPicker'; // Using the improved location picker
 import ImagePickerScreen from '../../screens/ImagePickerScreen';
 import PropertyPreviewScreen from '../../screens/PropertyPreviewScreen';
@@ -41,6 +42,11 @@ const AddPropertyStack = () => {
         name="PropertyPreview" 
         component={PropertyPreviewScreen} 
         options={{ title: 'Preview Listing' }}
+      />
+      <Stack.Screen 
+        name="EditProperty" 
+        component={EditPropertyScreen} 
+        options={{ title: 'Edit Property' }}
       />
     </Stack.Navigator>
   );

@@ -13,7 +13,6 @@ import ChatScreen from '../../screens/ChatScreen';
 import ViewMapScreen from '../../screens/ViewMapScreen';
 import HelpSupport from '../../screens/HelpSupport';
 import AboutApp from '../../screens/AboutApp';
-import EditPropertyScreen from '../../screens/EditPropertyScreen';
 
 const Stack = createNativeStackNavigator();
 

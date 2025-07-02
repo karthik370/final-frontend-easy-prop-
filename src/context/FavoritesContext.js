@@ -19,7 +19,9 @@ export const FavoritesProvider = ({ children }) => {
       const response = await axios.post(`${SERVER_URL}/api/properties/getByIds`, {
         propertyIds: ids
       });
-      setFavoriteProperties(Array.isArray(response.data) ? response.data : []);
+      // Only keep properties that still exist (have a valid _id)
+      const validProperties = Array.isArray(response.data) ? response.data.filter(p => p && p._id) : [];
+      setFavoriteProperties(validProperties);
     } catch (error) {
       console.error('Error fetching favorite properties:', error);
       setFavoriteProperties([]);
@@ -32,7 +34,7 @@ export const FavoritesProvider = ({ children }) => {
       setLoading(true);
       try {
         const response = await axios.get(`${SERVER_URL}/api/properties/favorites`);
-        const properties = Array.isArray(response.data) ? response.data : [];
+        const properties = Array.isArray(response.data) ? response.data.filter(p => p && p._id) : [];
         const ids = properties.map(p => p._id);
         setFavorites(ids);
         setFavoriteProperties(properties);
@@ -91,7 +93,7 @@ export const FavoritesProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await axios.get(`${SERVER_URL}/api/properties/favorites`);
-      const properties = Array.isArray(response.data) ? response.data : [];
+      const properties = Array.isArray(response.data) ? response.data.filter(p => p && p._id) : [];
       const ids = properties.map(p => p._id);
       setFavorites(ids);
       setFavoriteProperties(properties);

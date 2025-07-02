@@ -20,7 +20,7 @@ import axios from 'axios';
 import { SERVER_URL } from '../config/ip-config';
 import PropertyCard from '../components/PropertyCard';
 import * as Location from 'expo-location';
-
+import { AdMobBanner } from 'expo-ads-admob';
 const { width, height } = Dimensions.get('window');
 
 const PropertyListingScreen = ({ route, navigation }) => {
@@ -845,6 +845,12 @@ const PropertyListingScreen = ({ route, navigation }) => {
           </View>
         )}
       </View>
+      <AdMobBanner
+        bannerSize="banner"
+        adUnitID="ca-app-pub-3940256099942544/6300978111" // Your real ad unit ID
+        servePersonalizedAds={true} // or {false} for non-personalized
+        onDidFailToReceiveAdWithError={err => console.log('AdMob error:', err)}
+      />
     </View>
   );
 };

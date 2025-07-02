@@ -15,7 +15,7 @@ import axios from 'axios';
 import { SERVER_URL } from '../config/ip-config';
 import { AuthContext } from '../context/AuthContext';
 import { FavoritesContext } from '../context/FavoritesContext';
-
+import { AdMobBanner } from 'expo-ads-admob';
 // Components
 import PropertyCard from '../components/PropertyCard';
 
@@ -113,6 +113,12 @@ const FavoritesScreen = ({ navigation }) => {
             <Text style={styles.headerCount}>{favoriteProperties.length} properties</Text>
           </View>
         }
+      />
+      <AdMobBanner
+        bannerSize="banner"
+        adUnitID="ca-app-pub-3940256099942544/6300978111" // Your real ad unit ID
+        servePersonalizedAds={true} // or {false} for non-personalized
+        onDidFailToReceiveAdWithError={err => console.log('AdMob error:', err)}
       />
     </View>
   );

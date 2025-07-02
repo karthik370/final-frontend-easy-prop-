@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'rea
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { AuthContext } from '../../context/AuthContext';
+import { AdMobBanner } from 'expo-ads-admob';
 
 const WelcomeScreen = ({ navigation }) => {
   const authCtx = useContext(AuthContext);
@@ -32,6 +33,13 @@ const WelcomeScreen = ({ navigation }) => {
           <Text style={styles.logo}>Home Zest</Text>
           <Text style={styles.tagline}>Find your dream property</Text>
         </View>
+        
+        <AdMobBanner
+        bannerSize="mediumRectangle"
+        adUnitID="ca-app-pub-3940256099942544/6300978111" // Your real ad unit ID
+        servePersonalizedAds={true} // or {false} for non-personalized
+        onDidFailToReceiveAdWithError={err => console.log('AdMob error:', err)}
+      />
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity

@@ -40,7 +40,8 @@
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyA_Dun255HHND3b_lX5N05zvGT77NhDeCI"
-        }
+        },
+        "googleMobileAdsAppId": "ca-app-pub-6296876319188335~6779989129"
       },
       "permissions": [
         "ACCESS_COARSE_LOCATION",

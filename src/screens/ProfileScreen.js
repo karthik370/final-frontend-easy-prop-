@@ -6,6 +6,7 @@ import { SERVER_URL } from '../config/ip-config';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
+import { AdMobBanner } from 'expo-ads-admob';
 
 const ProfileScreen = ({ navigation }) => {
   const { user, userToken, logout, setUser } = useContext(AuthContext);
@@ -319,6 +320,12 @@ const ProfileScreen = ({ navigation }) => {
           </View>
         </TouchableOpacity>
       </View>
+      <AdMobBanner
+        bannerSize="largeBanner"
+        adUnitID="ca-app-pub-3940256099942544/6300978111" // Your real ad unit ID
+        servePersonalizedAds={true} // or {false} for non-personalized
+        onDidFailToReceiveAdWithError={err => console.log('AdMob error:', err)}
+      />
     </ScrollView>
   );
 };
@@ -449,7 +456,7 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     backgroundColor: '#fff',
-    marginTop: 15,
+    marginTop: 2,
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: '#f0f0f0',

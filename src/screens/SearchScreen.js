@@ -535,6 +535,12 @@ const SearchScreen = ({ route, navigation }) => {
             }
           />
         )}
+      <AdMobBanner
+        bannerSize="banner"
+        adUnitID="ca-app-pub-3940256099942544/6300978111" // Your real ad unit ID
+        servePersonalizedAds={true} // or {false} for non-personalized
+        onDidFailToReceiveAdWithError={err => console.log('AdMob error:', err)}
+      />
       </View>
     </KeyboardAvoidingView>
   );

@@ -16,7 +16,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import axios from 'axios';
 import { SERVER_URL } from '../config/ip-config';
 import * as Location from 'expo-location';
-import { AdMobBanner } from 'expo-ads-admob';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 const { width, height } = Dimensions.get('window');
 
 const ViewMapScreen = ({ route, navigation }) => {
@@ -41,11 +41,11 @@ const ViewMapScreen = ({ route, navigation }) => {
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High
       });
-      
+
       const { latitude, longitude } = location.coords;
-      
+
       setCurrentLocation({ latitude, longitude }); // store actual location
-      
+
       // Optionally move map to current location
       const newRegion = {
         latitude,
@@ -53,9 +53,9 @@ const ViewMapScreen = ({ route, navigation }) => {
         latitudeDelta: 0.02,
         longitudeDelta: 0.02
       };
-      
+
       setRegion(newRegion);
-      
+
       if (mapRef.current) {
         mapRef.current.animateToRegion(newRegion, 1000);
       }
@@ -70,10 +70,10 @@ const ViewMapScreen = ({ route, navigation }) => {
   // Force fetch properties when component mounts
   useEffect(() => {
     console.log('ViewMapScreen init with params:', { propertyId, category, viewMode, filters });
-    
+
     // Always fetch all properties to show on map regardless of mode
     fetchAllProperties();
-    
+
     // Request location permissions
     (async () => {
       try {
@@ -90,13 +90,13 @@ const ViewMapScreen = ({ route, navigation }) => {
         console.error('Error requesting location permissions:', error);
       }
     })();
-    
+
     // If we have a specific property, set the map to that location
     if (propertyId && location) {
       // Single property view mode
       console.log('Focusing on specific property on map');
       const newRegion = {
-        latitude: location.coordinates[1], 
+        latitude: location.coordinates[1],
         longitude: location.coordinates[0],
         latitudeDelta: 0.02,
         longitudeDelta: 0.02
@@ -116,43 +116,43 @@ const ViewMapScreen = ({ route, navigation }) => {
   const fetchAllProperties = async () => {
     setIsLoading(true);
     console.log('Fetching ALL properties for map view');
-    
+
     try {
       // Using fetch instead of axios to match PropertyListingScreen approach
       const response = await fetch(`${SERVER_URL}/api/properties`);
-      
+
       if (!response.ok) {
         throw new Error(`Server returned ${response.status}`);
       }
-      
+
       // Parse the JSON response directly
       const data = await response.json();
       console.log('Response received:', data ? 'Data exists' : 'No data');
-      
+
       if (data && data.properties && Array.isArray(data.properties)) {
         const propertiesData = data.properties;
         console.log(`Fetched ${propertiesData.length} properties from server`);
-        
+
         // Apply any filters if needed
         let filteredProperties = propertiesData;
-        
+
         if (category === 'Buy') {
           // For Buy category, filter to only show 'Sell' properties
           filteredProperties = propertiesData.filter(prop => prop.category === 'Sell');
           console.log(`Filtered to ${filteredProperties.length} properties for sale`);
-        } 
+        }
         else if (category === 'Rent') {
           filteredProperties = propertiesData.filter(prop => prop.category === 'Rent');
           console.log(`Filtered to ${filteredProperties.length} properties for rent`);
         }
         else if (category === 'PG/Hostel') {
           // For PG/Hostel category, filter by property type
-          filteredProperties = propertiesData.filter(prop => 
+          filteredProperties = propertiesData.filter(prop =>
             prop.propertyType === 'PG' || prop.propertyType === 'Hostel'
           );
           console.log(`Filtered to ${filteredProperties.length} PG/Hostel properties`);
         }
-        
+
         // Set properties for display
         setProperties(filteredProperties);
         console.log('Properties to display on map:', filteredProperties.length > 0 ? 'Yes' : 'No');
@@ -171,7 +171,7 @@ const ViewMapScreen = ({ route, navigation }) => {
       setIsLoading(false);
     }
   };
-  
+
   const fetchProperties = async () => {
     setIsLoading(true);
     try {
@@ -197,7 +197,7 @@ const ViewMapScreen = ({ route, navigation }) => {
         // Apply category filter
         if (filters.category) {
           let categoryParam = filters.category;
-          
+
           if (filters.category === 'Buy') {
             categoryParam = 'Sell';
           } else if (filters.category === 'PG/Hostel') {
@@ -206,17 +206,17 @@ const ViewMapScreen = ({ route, navigation }) => {
             // Clear category since we're filtering by property type
             categoryParam = undefined;
           }
-          
+
           if (categoryParam) {
             params.category = categoryParam;
           }
         }
-        
+
         // Apply property type filter
         if (filters.propertyType && filters.propertyType !== 'All') {
           params.propertyType = filters.propertyType;
         }
-        
+
         // Apply price range filters
         if (filters.priceMin) {
           params.minPrice = filters.priceMin;
@@ -224,16 +224,16 @@ const ViewMapScreen = ({ route, navigation }) => {
         if (filters.priceMax) {
           params.maxPrice = filters.priceMax;
         }
-        
+
         // Apply other filters
         if (filters.bhk && filters.bhk !== 'Any') {
           params.bhk = filters.bhk;
         }
-        
+
         if (filters.furnishing && filters.furnishing !== 'Any') {
           params.furnishing = filters.furnishing;
         }
-        
+
         if (filters.city) {
           params['location.city'] = filters.city;
         }
@@ -242,12 +242,12 @@ const ViewMapScreen = ({ route, navigation }) => {
       console.log('Fetching properties with params:', params);
       const response = await axios.get(endpoint, { params });
       const responseData = response.data;
-      
+
       // Check if the response has a properties array (the correct format from backend)
       if (responseData && responseData.properties && Array.isArray(responseData.properties)) {
         const propertiesData = responseData.properties;
         console.log(`Fetched ${propertiesData.length} properties with filters`);
-        
+
         if (propertiesData.length === 0) {
           setProperties([]);
           Alert.alert('No Properties Found', 'No properties match your current criteria.');
@@ -256,11 +256,11 @@ const ViewMapScreen = ({ route, navigation }) => {
 
         // Filter out properties without valid location data
         const validProperties = propertiesData.filter(
-          prop => prop.location && prop.location.coordinates && 
-          Array.isArray(prop.location.coordinates) && 
-          prop.location.coordinates.length === 2 &&
-          !isNaN(prop.location.coordinates[0]) && 
-          !isNaN(prop.location.coordinates[1])
+          prop => prop.location && prop.location.coordinates &&
+            Array.isArray(prop.location.coordinates) &&
+            prop.location.coordinates.length === 2 &&
+            !isNaN(prop.location.coordinates[0]) &&
+            !isNaN(prop.location.coordinates[1])
         );
 
         if (validProperties.length === 0) {
@@ -305,7 +305,7 @@ const ViewMapScreen = ({ route, navigation }) => {
       // Use geocoding to get locations matching the search query
       const response = await Location.geocodeAsync(query);
       console.log('Geocode results:', response?.length || 0, 'locations found');
-      
+
       if (response && response.length > 0) {
         // Get reverse geocoding results for better display names (limit to 5 results)
         const results = await Promise.all(
@@ -316,10 +316,10 @@ const ViewMapScreen = ({ route, navigation }) => {
                 latitude: location.latitude,
                 longitude: location.longitude
               });
-              
+
               if (reverseGeocode && reverseGeocode.length > 0) {
                 const place = reverseGeocode[0];
-                
+
                 // Build a readable place name from available address components
                 const placeName = [
                   place.name,
@@ -329,9 +329,9 @@ const ViewMapScreen = ({ route, navigation }) => {
                   place.region,
                   place.country
                 ].filter(Boolean).join(', ');
-                
+
                 console.log('Found place:', placeName);
-                
+
                 return {
                   id: `${location.latitude}-${location.longitude}`,
                   name: placeName,
@@ -346,11 +346,11 @@ const ViewMapScreen = ({ route, navigation }) => {
             }
           })
         );
-        
+
         // Filter out any null results
         const filteredResults = results.filter(Boolean);
         console.log('Final location suggestions:', filteredResults.length);
-        
+
         setLocationSuggestions(filteredResults);
         setShowSuggestions(filteredResults.length > 0);
       } else {
@@ -372,12 +372,12 @@ const ViewMapScreen = ({ route, navigation }) => {
   // Handle location selection from suggestions with improved animation and feedback
   const handleLocationSelect = (location) => {
     console.log('Location selected:', location.name, `(${location.latitude}, ${location.longitude})`);
-    
+
     // Update search text with selected location name
     setSearchText(location.name);
     setShowSuggestions(false);
     Keyboard.dismiss();
-    
+
     // Create a new region focused on the selected location
     const newRegion = {
       latitude: location.latitude,
@@ -385,13 +385,13 @@ const ViewMapScreen = ({ route, navigation }) => {
       latitudeDelta: 0.02,  // Zoom level - smaller values = more zoomed in
       longitudeDelta: 0.02
     };
-    
+
     // Update the region state without triggering additional redraws
     setTimeout(() => {
       // Delay the region update to avoid flickering
       setRegion(newRegion);
     }, 10);
-    
+
     // Animate the map to the new region with smooth transition
     if (mapRef.current) {
       // Use a delay to ensure smooth animation
@@ -480,10 +480,10 @@ const ViewMapScreen = ({ route, navigation }) => {
     const navigationState = navigation.getState();
     const routes = navigationState.routes;
     const currentRoute = routes[0]?.name || '';
-    
+
     // Get the appropriate screen to navigate to
     const screenName = screenMapping[currentRoute] || 'PropertyDetails';
-    
+
     console.log(`Navigating to ${screenName} with property:`, property._id);
     navigation.navigate(screenName, { property });
   };
@@ -575,8 +575,8 @@ const ViewMapScreen = ({ route, navigation }) => {
             loadingBackgroundColor="#f8f8f8"
             onRegionChangeComplete={(newRegion) => {
               // Only update region if it's significantly different to avoid small jumps
-              if (Math.abs(newRegion.latitude - region.latitude) > 0.0001 || 
-                  Math.abs(newRegion.longitude - region.longitude) > 0.0001) {
+              if (Math.abs(newRegion.latitude - region.latitude) > 0.0001 ||
+                Math.abs(newRegion.longitude - region.longitude) > 0.0001) {
                 setRegion(newRegion);
               }
             }}
@@ -588,30 +588,30 @@ const ViewMapScreen = ({ route, navigation }) => {
                 console.log('Property missing proper coordinate structure:', property._id);
                 return null;
               }
-              
+
               // Extract coordinates from the nested structure - EXACTLY like PropertyListingScreen
               const coordinates = property.location.coordinates.coordinates;
-              
+
               // Make sure we have a valid coordinate array
               if (!Array.isArray(coordinates) || coordinates.length !== 2) {
                 console.log('Invalid coordinates array:', property._id);
                 return null;
               }
-              
+
               // GeoJSON stores coordinates as [longitude, latitude] - SAME as PropertyListingScreen
               const longitude = parseFloat(coordinates[0]);
               const latitude = parseFloat(coordinates[1]);
-              
+
               console.log(`Rendering marker for ${property._id} at ${latitude}, ${longitude}`);
-              
+
               // Skip invalid coordinates
               if (isNaN(latitude) || isNaN(longitude)) {
                 console.log('Invalid coordinate values:', property._id);
                 return null;
               }
-              
+
               console.log(`Creating marker for ${property._id} at ${latitude}, ${longitude}`);
-              
+
               // Skip properties with NaN coordinates
               if (isNaN(longitude) || isNaN(latitude)) {
                 console.log('Invalid coordinates:', property._id);
@@ -642,8 +642,8 @@ const ViewMapScreen = ({ route, navigation }) => {
                         {property.location?.address || 'Location not specified'}
                       </Text>
                       <Text style={styles.calloutDetails}>
-                        {property.category === 'Sell' ? 'For Sale' : 
-                        property.category === 'Rent' ? 'For Rent' : 'PG/Hostel'}
+                        {property.category === 'Sell' ? 'For Sale' :
+                          property.category === 'Rent' ? 'For Rent' : 'PG/Hostel'}
                         {property.propertyType ? ` • ${property.propertyType}` : ''}
                         {property.bedrooms ? ` • ${property.bedrooms} BHK` : ''}
                       </Text>
@@ -678,13 +678,16 @@ const ViewMapScreen = ({ route, navigation }) => {
             </Text>
           </View>
         </View>
-        
+
       )}
-          <AdMobBanner
-        bannerSize="largeBanner"
-        adUnitID="ca-app-pub-3940256099942544/6300978111" // Your real ad unit ID
-        servePersonalizedAds={true} // or {false} for non-personalized
-        onDidFailToReceiveAdWithError={err => console.log('AdMob error:', err)}
+      <BannerAd
+        size={BannerAdSize.LARGE_BANNER}
+        unitId={TestIds.BANNER} // This is Google's test ad unit ID
+        requestOptions={{
+          requestNonPersonalizedAdsOnly: false
+        }}
+        onAdLoaded={() => console.log('Ad loaded successfully')}
+        onAdFailedToLoad={(error) => console.log('AdMob error:', error)}
       />
     </View>
   );

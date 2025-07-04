@@ -5,38 +5,22 @@
   },
   "build": {
     "development": {
-      "distribution": "internal",
-      "android": {
-        "gradleCommand": ":app:assembleDebug"
-      },
-      "ios": {
-        "buildConfiguration": "Debug"
-      }
+      "developmentClient": true,
+      "distribution": "internal"
     },
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk"
+        "buildType": "app-bundle"
       }
     },
     "production": {
       "android": {
-        "buildType": "apk"
-      }
-    },
-    "apk": {
-      "android": {
-        "buildType": "apk",
-        "image": "ubuntu-22.04-jdk-17-ndk-r21e",
-        "gradleCommand": ":app:assembleRelease",
-        "env": {
-          "JAVA_HOME": "/usr/lib/jvm/java-17-openjdk-amd64"
-        }
-      },
-      "ios": {
-        "simulator": false,
-        "distribution": "store"
+        "buildType": "app-bundle"
       }
     }
+  },
+  "submit": {
+    "production": {}
   }
 }

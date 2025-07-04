@@ -6,7 +6,7 @@ import { SERVER_URL } from '../config/ip-config';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
-import { AdMobBanner } from 'expo-ads-admob';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
 const ProfileScreen = ({ navigation }) => {
   const { user, userToken, logout, setUser } = useContext(AuthContext);
@@ -23,7 +23,7 @@ const ProfileScreen = ({ navigation }) => {
       fetchUserStats();
     }
   }, [userToken]);
-  
+
   // Add focus listener to refresh data whenever screen comes into focus
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
@@ -33,7 +33,7 @@ const ProfileScreen = ({ navigation }) => {
         fetchUserProfile();
       }
     });
-    
+
     return unsubscribe;
   }, [navigation, userToken]);
 
@@ -49,10 +49,10 @@ const ProfileScreen = ({ navigation }) => {
     if (!userToken) {
       return; // Don't fetch if not logged in
     }
-    
+
     setIsLoading(true);
     console.log('Fetching user stats...');
-    
+
     try {
       // Use the correct endpoint for user stats
       const response = await axios.get(`${SERVER_URL}/api/user-settings/stats`, {
@@ -60,7 +60,7 @@ const ProfileScreen = ({ navigation }) => {
           'Authorization': `Bearer ${userToken}`
         }
       });
-      
+
       if (response.data) {
         console.log('User stats fetched successfully:', response.data);
         setStats({
@@ -71,7 +71,7 @@ const ProfileScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Error fetching user stats:', error);
-      
+
       // Set empty stats instead of mock data
       setStats({
         properties: 0,
@@ -88,14 +88,14 @@ const ProfileScreen = ({ navigation }) => {
     if (!userToken) {
       return; // Don't fetch if not logged in
     }
-    
+
     try {
       const response = await axios.get(`${SERVER_URL}/api/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${userToken}`
         }
       });
-      
+
       if (response.data) {
         console.log('User profile fetched successfully:', response.data);
         // Update the user context with fresh data
@@ -111,6 +111,7 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
+  // ✅ FIXED: Removed navigation.reset - just call logout()
   const handleLogout = async () => {
     console.log('Logout button pressed');
     try {
@@ -119,28 +120,19 @@ const ProfileScreen = ({ navigation }) => {
         'Are you sure you want to logout?',
         [
           { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Logout', 
-            style: 'destructive', 
+          {
+            text: 'Logout',
+            style: 'destructive',
             onPress: async () => {
               console.log('Logout confirmed, calling logout function');
-              // Add a small delay to show the alert before logging out
-              setTimeout(() => {
-                logout();
-                // Force navigation to home screen
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'HomeTab' }],
-                });
-              }, 500);
-            } 
+              logout(); // ✅ Just call logout - AppNavigator will handle navigation
+            }
           }
         ]
       );
     } catch (error) {
       console.error('Error during logout:', error);
-      // Force logout even if there's an error
-      logout();
+      logout(); // ✅ Just call logout
     }
   };
 
@@ -159,7 +151,7 @@ const ProfileScreen = ({ navigation }) => {
         </Text>
         <TouchableOpacity
           style={styles.loginButton}
-          onPress={() => navigation.navigate('Auth')}
+          onPress={() => navigation.navigate('HomeTab')} // ✅ FIXED: Navigate to HomeTab instead of calling logout
         >
           <Text style={styles.loginButtonText}>Sign In / Register</Text>
         </TouchableOpacity>
@@ -203,7 +195,7 @@ const ProfileScreen = ({ navigation }) => {
               </Text>
             )}
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.editProfileButton}
             onPress={() => navigation.navigate('EditProfile')}
           >
@@ -238,7 +230,7 @@ const ProfileScreen = ({ navigation }) => {
 
       {/* Menu Options */}
       <View style={styles.menuContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.menuItem}
           onPress={() => navigation.navigate('MyProperties')}
         >
@@ -252,7 +244,7 @@ const ProfileScreen = ({ navigation }) => {
           <Ionicons name="chevron-forward" size={20} color="#999" />
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.menuItem}
           onPress={() => navigation.navigate('FavoritesTab')}
         >
@@ -266,7 +258,7 @@ const ProfileScreen = ({ navigation }) => {
           <Ionicons name="chevron-forward" size={20} color="#999" />
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.menuItem}
           onPress={() => navigation.navigate('Settings')}
         >
@@ -280,7 +272,7 @@ const ProfileScreen = ({ navigation }) => {
           <Ionicons name="chevron-forward" size={20} color="#999" />
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.menuItem}
           onPress={() => navigation.navigate('HelpSupport')}
         >
@@ -294,7 +286,7 @@ const ProfileScreen = ({ navigation }) => {
           <Ionicons name="chevron-forward" size={20} color="#999" />
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.menuItem}
           onPress={() => navigation.navigate('AboutApp')}
         >
@@ -308,7 +300,7 @@ const ProfileScreen = ({ navigation }) => {
           <Ionicons name="chevron-forward" size={20} color="#999" />
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.menuItem, styles.logoutItem]}
           onPress={handleLogout}
         >
@@ -320,11 +312,14 @@ const ProfileScreen = ({ navigation }) => {
           </View>
         </TouchableOpacity>
       </View>
-      <AdMobBanner
-        bannerSize="largeBanner"
-        adUnitID="ca-app-pub-3940256099942544/6300978111" // Your real ad unit ID
-        servePersonalizedAds={true} // or {false} for non-personalized
-        onDidFailToReceiveAdWithError={err => console.log('AdMob error:', err)}
+      <BannerAd
+        size={BannerAdSize.LARGE_BANNER}
+        unitId={TestIds.BANNER} // This is Google's test ad unit ID
+        requestOptions={{
+          requestNonPersonalizedAdsOnly: false
+        }}
+        onAdLoaded={() => console.log('Ad loaded successfully')}
+        onAdFailedToLoad={(error) => console.log('AdMob error:', error)}
       />
     </ScrollView>
   );

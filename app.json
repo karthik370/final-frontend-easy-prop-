@@ -1,24 +1,22 @@
 {
   "expo": {
-    "name": "easy-realestate-app",
-    "slug": "easy-realestate-app",
-    "owner": "karthi370",
+    "name": "home-zest",
+    "slug": "home-zest",
+    "owner": "govardhan30",
     "version": "1.0.0",
+    "sdkVersion": "53.0.0",
     "platforms": [
       "ios",
       "android"
     ],
     "orientation": "portrait",
-    "splash": {
-      "backgroundColor": "#ffffff"
-    },
     "updates": {
       "fallbackToCacheTimeout": 0
     },
     "assetBundlePatterns": [
       "**/*"
     ],
-    "scheme": "easy-realestate-app",
+    "scheme": "home-zest",
     "extra": {
       "googleMapsApiKey": "AIzaSyA_Dun255HHND3b_lX5N05zvGT77NhDeCI",
       "firebase": {
@@ -31,17 +29,16 @@
         "measurementId": "G-0Y40C6GLMP"
       },
       "eas": {
-        "projectId": "cf3a8c22-a8fd-45df-99b0-c86ee5c196ff"
+        "projectId": "10f69047-c332-4b9d-9025-46bd8ec4c5b8"
       }
     },
     "android": {
-      "package": "com.karthi370.esayrealestate",
-      "versionCode": 1,
+      "package": "com.govardhan30.homezest",
+      "versionCode": 3,
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyA_Dun255HHND3b_lX5N05zvGT77NhDeCI"
-        },
-        "googleMobileAdsAppId": "ca-app-pub-6296876319188335~6779989129"
+        }
       },
       "permissions": [
         "ACCESS_COARSE_LOCATION",
@@ -50,11 +47,22 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.karthi370.esayrealestate",
+      "bundleIdentifier": "com.govardhan30.homezest",
       "buildNumber": "1.0.0",
       "config": {
         "googleMapsApiKey": "AIzaSyA_Dun255HHND3b_lX5N05zvGT77NhDeCI"
       }
-    }
+    },
+    "plugins": [
+      "expo-font",
+      "expo-web-browser",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-6296876319188335~6779989129",
+          "iosAppId": "ca-app-pub-6296876319188335~6779989129"
+        }
+      ]
+    ]
   }
 }

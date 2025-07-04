@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { SERVER_URL } from '../config/ip-config';
 import { LocationContext } from '../context/LocationContext';
-
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 // Components
 import PropertyCard from '../components/PropertyCard';
 
@@ -535,11 +535,14 @@ const SearchScreen = ({ route, navigation }) => {
             }
           />
         )}
-      <AdMobBanner
-        bannerSize="banner"
-        adUnitID="ca-app-pub-3940256099942544/6300978111" // Your real ad unit ID
-        servePersonalizedAds={true} // or {false} for non-personalized
-        onDidFailToReceiveAdWithError={err => console.log('AdMob error:', err)}
+      <BannerAd
+        size={BannerAdSize.BANNER}
+        unitId={TestIds.BANNER} // This is Google's test ad unit ID
+        requestOptions={{
+          requestNonPersonalizedAdsOnly: false
+        }}
+        onAdLoaded={() => console.log('Ad loaded successfully')}
+        onAdFailedToLoad={(error) => console.log('AdMob error:', error)}
       />
       </View>
     </KeyboardAvoidingView>

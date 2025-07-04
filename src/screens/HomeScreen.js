@@ -15,8 +15,8 @@ import {
 import { Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import axios from 'axios';
 import { SERVER_URL } from '../config/ip-config';
-import { AdMobBanner } from 'expo-ads-admob';
 // Components
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 import PropertyCard from '../components/PropertyCard';
 
 const HomeScreen = ({ navigation }) => {
@@ -371,11 +371,14 @@ const HomeScreen = ({ navigation }) => {
         </View>
       )}
       {/* AdMob Banner Ad */}
-      <AdMobBanner
-        bannerSize="banner"
-        adUnitID="ca-app-pub-3940256099942544/6300978111" // Your real ad unit ID
-        servePersonalizedAds={true} // or {false} for non-personalized
-        onDidFailToReceiveAdWithError={err => console.log('AdMob error:', err)}
+      <BannerAd
+        size={BannerAdSize.BANNER}
+        unitId={TestIds.BANNER} // This is Google's test ad unit ID
+        requestOptions={{
+          requestNonPersonalizedAdsOnly: false
+        }}
+        onAdLoaded={() => console.log('Ad loaded successfully')}
+        onAdFailedToLoad={(error) => console.log('AdMob error:', error)}
       />
     </View>
   );
@@ -419,7 +422,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    gap: 10
+    marginLeft: -45,
+    gap: -40,
+    paddingRight: -20,
+    
   },
   categoryButton: {
     alignItems: 'center',
@@ -440,7 +446,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   categorySubtitle: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#777',
     textAlign: 'center',
   },
@@ -545,10 +551,12 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   serviceButton: {
+  paddingLeft:25,
     alignItems: 'center',
-    width: width / 4 - 15,
+    width: width / 3 - 35,
   },
   serviceIcon: {
+    paddingLeft:10,
     width: 50,
     height: 50,
     borderRadius: 20,
@@ -559,6 +567,7 @@ const styles = StyleSheet.create({
 
   },
   serviceText: {
+    paddingLeft:10,
     fontSize: 14,
     color: '#333',
     textAlign: 'center',

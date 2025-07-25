@@ -256,7 +256,10 @@ const HomeScreen = ({ navigation }) => {
             <View style={styles.serviceIcon}>
               <Ionicons name="location" size={40} color="#0066cc" />
             </View>
-            <Text style={styles.serviceText}>Nearby Properties</Text>
+            <>
+              <Text style={styles.categoryTitle}>Nearby</Text>
+              <Text style={styles.categorySubtitle}>Properties</Text>
+            </>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -267,7 +270,7 @@ const HomeScreen = ({ navigation }) => {
               <Ionicons name="home" size={28} color="#fff" />
             </View>
             <Text style={styles.categoryTitle}>Buy Properties</Text>
-            <Text style={styles.categorySubtitle}>Find properties</Text>
+
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -278,7 +281,7 @@ const HomeScreen = ({ navigation }) => {
               <Ionicons name="key" size={28} color="#fff" />
             </View>
             <Text style={styles.categoryTitle}>Search for Rent</Text>
-            <Text style={styles.categorySubtitle}>Explore rentals</Text>
+
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -289,7 +292,7 @@ const HomeScreen = ({ navigation }) => {
               <Ionicons name="bed" size={28} color="#fff" />
             </View>
             <Text style={styles.categoryTitle}>PGs/Hostels</Text>
-            <Text style={styles.categorySubtitle}>Find accommodation</Text>
+
           </TouchableOpacity>
         </View>
       </View>
@@ -421,15 +424,12 @@ const styles = StyleSheet.create({
   categoryRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    alignItems: 'center',
-    marginLeft: -45,
-    gap: -40,
-    paddingRight: -20,
-    
+    alignItems: 'flex-start', // Align all buttons to the top for consistent layout
   },
   categoryButton: {
+    flex: 1, // Make each button flexible to share space equally
     alignItems: 'center',
-    width: width / 3 - 20,
+    marginHorizontal: 5, // Add a small margin to create a gap
   },
   categoryIcon: {
     width: 50,
@@ -441,14 +441,17 @@ const styles = StyleSheet.create({
   },
   categoryTitle: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '500',
     color: '#333',
     textAlign: 'center',
+    flexShrink: 1, // Allow text to shrink and wrap
   },
   categorySubtitle: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#777',
     textAlign: 'center',
+    marginTop: 2,
+    flexShrink: 1, // Allow text to shrink and wrap
   },
   featuredPropertiesContainer: {
     flex: 1,
@@ -551,39 +554,30 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   serviceButton: {
-  paddingLeft:25,
+    flex: 1, // Allow button to grow and shrink
     alignItems: 'center',
-    width: width / 3 - 35,
+    marginHorizontal: 2,
+    paddingHorizontal: 2, // Add some padding for smaller screens
   },
   serviceIcon: {
-    paddingLeft:10,
     width: 50,
     height: 50,
-    borderRadius: 20,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    // Match categoryIcon style by removing background color here
+  },
+  /* serviceText is no longer used, replaced by categoryTitle and categorySubtitle */
+  categoryButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-start', // Align items to the top to handle different text heights
+    paddingHorizontal: 5,
+    paddingVertical: 15,
     backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-
-
-  },
-  serviceText: {
-    paddingLeft:10,
-    fontSize: 14,
-    color: '#333',
-    textAlign: 'center',
-    fontWeight: 'bold',
-    marginTop: 8,
-  },
-  loaderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 30,
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#666',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
   emptyContainer: {
     alignItems: 'center',

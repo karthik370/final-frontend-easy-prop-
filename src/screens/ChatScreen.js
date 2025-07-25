@@ -954,6 +954,7 @@ const ChatScreen = ({ route, navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="Type a message..."
+            placeholderTextColor="#888"
             value={inputText}
             onChangeText={setInputText}
             multiline

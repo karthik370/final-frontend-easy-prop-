@@ -219,6 +219,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
               <TextInput
                 style={styles.input}
                 placeholder="Email"
+                placeholderTextColor="#888"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -253,6 +254,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
               <TextInput
                 style={styles.input}
                 placeholder="Verification Code"
+                placeholderTextColor="#888"
                 value={verificationCode}
                 onChangeText={setVerificationCode}
                 keyboardType="default"
@@ -295,6 +297,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
               <TextInput
                 style={styles.input}
                 placeholder="New Password"
+                placeholderTextColor="#888"
                 value={newPassword}
                 onChangeText={setNewPassword}
                 secureTextEntry={!showPassword}
@@ -315,6 +318,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
               <TextInput
                 style={styles.input}
                 placeholder="Confirm New Password"
+                placeholderTextColor="#888"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showPassword}

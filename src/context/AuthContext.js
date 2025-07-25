@@ -12,15 +12,39 @@ export const AuthProvider = ({ children }) => {
   const [userToken, setUserToken] = useState(null);
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Set up axios defaults
+  // Set up axios defaults - only when needed
   useEffect(() => {
-    if (userToken) {
+    if (userToken && userToken !== 'loading') {
       axios.defaults.headers.common['Authorization'] = `Bearer ${userToken}`;
     } else {
       delete axios.defaults.headers.common['Authorization'];
     }
   }, [userToken]);
+
+  // Initialize auth state from storage (fast, non-blocking)
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const [storedToken, storedUser] = await Promise.all([
+          AsyncStorage.getItem('userToken'),
+          AsyncStorage.getItem('userData')
+        ]);
+        
+        if (storedToken && storedUser) {
+          setUserToken(storedToken);
+          setUser(JSON.parse(storedUser));
+        }
+      } catch (error) {
+        console.error('Failed to initialize auth:', error);
+      } finally {
+        setIsInitialized(true);
+      }
+    };
+    
+    initializeAuth();
+  }, []);
 
   // Login with email/password
   const login = async (emailOrPhone, password) => {
@@ -449,6 +473,7 @@ export const AuthProvider = ({ children }) => {
         setUser,
         error,
         setError,
+        isInitialized,
         login,
         register,
         firebaseLogin,

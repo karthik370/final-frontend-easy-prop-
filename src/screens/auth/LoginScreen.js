@@ -75,6 +75,7 @@ const LoginScreen = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="Email or Phone Number"
+              placeholderTextColor="#888"
               value={emailOrPhone}
               onChangeText={setEmailOrPhone}
               keyboardType="default"
@@ -88,6 +89,7 @@ const LoginScreen = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="Password"
+              placeholderTextColor="#888"
               secureTextEntry={!showPassword}
               value={password}
               onChangeText={setPassword}
@@ -183,6 +185,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingRight: 10,
     fontSize: 16,
+    color: '#333',
   },
   errorText: {
     color: 'red',

@@ -23,6 +23,15 @@ import * as Location from 'expo-location';
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 const { width, height } = Dimensions.get('window');
 
+const formatPrice = (price) => {
+  if (price >= 10000000) {
+    return `₹${(price / 10000000).toFixed(2)} Cr`;
+  } else if (price >= 100000) {
+    return `₹${(price / 100000).toFixed(1)} L`;
+  }
+  return `₹${price.toLocaleString('en-IN')}`;
+};
+
 const PropertyListingScreen = ({ route, navigation }) => {
   // Get category from navigation params
   const { category } = route.params || { category: 'All' };
@@ -349,12 +358,10 @@ const PropertyListingScreen = ({ route, navigation }) => {
                 : null
             ]}>
               <Text style={styles.markerPrice}>
-                ₹{property.price >= 100000 ? 
-                  `${Math.round(property.price / 100000)}L` : 
-                  property.price.toLocaleString()}
+                {formatPrice(property.price)}
               </Text>
             </View>
-            <View style={styles.markerArrow} />
+            {/* <View style={styles.markerArrow} /> */}
           </View>
         </Marker>
       );
@@ -711,7 +718,8 @@ const PropertyListingScreen = ({ route, navigation }) => {
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search for location..."
+            placeholder="Search by location, city, or address"
+            placeholderTextColor="#888"
             value={searchQuery}
             onChangeText={(text) => {
               setSearchQuery(text);
@@ -1073,23 +1081,32 @@ const styles = StyleSheet.create({
     color: '#0066cc',
   },
   markerContainer: {
+    flexDirection: 'column',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   marker: {
-    backgroundColor: '#0066cc',
-    padding: 5,
-    paddingHorizontal: 8,
-    borderRadius: 4,
+    backgroundColor: '#006c',
+    paddingVertical: 4,
+    paddingHorizontal: -10,
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   selectedMarker: {
     backgroundColor: '#ff6600',
-    padding: 7,
-    paddingHorizontal: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   markerPrice: {
     color: 'white',
     fontWeight: 'bold',
     fontSize: 12,
+    lineHeight: 14, // Force line height to prevent clipping
+    textAlign: 'center', // Ensure text is centered
   },
   markerArrow: {
     width: 0,

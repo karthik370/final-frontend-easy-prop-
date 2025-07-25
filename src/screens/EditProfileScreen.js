@@ -157,6 +157,7 @@ const EditProfileScreen = ({ navigation }) => {
               value={name}
               onChangeText={setName}
               placeholder="Enter your full name"
+              placeholderTextColor="#888"
             />
             {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
           </View>
@@ -168,6 +169,7 @@ const EditProfileScreen = ({ navigation }) => {
               value={email}
               onChangeText={setEmail}
               placeholder="Enter your email address"
+              placeholderTextColor="#888"
               keyboardType="email-address"
               autoCapitalize="none"
             />
@@ -181,6 +183,7 @@ const EditProfileScreen = ({ navigation }) => {
               value={phone}
               onChangeText={setPhone}
               placeholder="Enter your phone number"
+              placeholderTextColor="#888"
               keyboardType="phone-pad"
             />
             {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
@@ -193,6 +196,7 @@ const EditProfileScreen = ({ navigation }) => {
               value={bio}
               onChangeText={setBio}
               placeholder="Tell us about yourself"
+              placeholderTextColor="#888"
               multiline
               numberOfLines={4}
             />
@@ -207,6 +211,7 @@ const EditProfileScreen = ({ navigation }) => {
               value={location}
               onChangeText={setLocation}
               placeholder="Enter your city"
+              placeholderTextColor="#888"
             />
           </View>
         </View>

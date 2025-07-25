@@ -408,7 +408,8 @@ const SearchScreen = ({ route, navigation }) => {
               <Ionicons name="search-outline" size={20} color="#666" style={styles.searchIcon} />
               <TextInput
                 style={styles.searchInput}
-                placeholder={address?.city ? `Search in ${address.city}` : "Search properties..."}
+                placeholder={address?.city ? `Search in ${address.city}` : "Search properties, locations..."}
+                placeholderTextColor="#888"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 onSubmitEditing={handleSearch}
@@ -544,6 +545,7 @@ const SearchScreen = ({ route, navigation }) => {
         onAdLoaded={() => console.log('Ad loaded successfully')}
         onAdFailedToLoad={(error) => console.log('AdMob error:', error)}
       />
+
       </View>
     </KeyboardAvoidingView>
   );

@@ -17,6 +17,7 @@ import axios from 'axios';
 import { SERVER_URL } from '../config/ip-config';
 import * as Location from 'expo-location';
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+
 const { width, height } = Dimensions.get('window');
 
 const ViewMapScreen = ({ route, navigation }) => {
@@ -514,6 +515,7 @@ const ViewMapScreen = ({ route, navigation }) => {
           <TextInput
             style={styles.searchInput}
             placeholder="Search location..."
+            placeholderTextColor="#888" // Set explicit color for placeholder
             value={searchText}
             onChangeText={(text) => {
               setSearchText(text);

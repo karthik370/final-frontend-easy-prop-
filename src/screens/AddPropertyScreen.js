@@ -569,6 +569,7 @@ const AddPropertyScreen = ({ navigation }) => {
                 <TextInput
                   style={styles.input}
                   placeholder="e.g., 3 BHK Apartment in Whitefield"
+                  placeholderTextColor="#888"
                   value={values.title}
                   onChangeText={handleChange('title')}
                   onBlur={handleBlur('title')}
@@ -582,6 +583,7 @@ const AddPropertyScreen = ({ navigation }) => {
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   placeholder="Describe your property in detail"
+                  placeholderTextColor="#888"
                   value={values.description}
                   onChangeText={handleChange('description')}
                   onBlur={handleBlur('description')}
@@ -602,6 +604,7 @@ const AddPropertyScreen = ({ navigation }) => {
                   <TextInput
                     style={styles.priceInput}
                     placeholder="0"
+                    placeholderTextColor="#888"
                     value={values.price}
                     onChangeText={handleChange('price')}
                     onBlur={handleBlur('price')}
@@ -619,6 +622,7 @@ const AddPropertyScreen = ({ navigation }) => {
                     <TextInput
                       style={styles.input}
                       placeholder="e.g., 2"
+                      placeholderTextColor="#888"
                       value={values.bhk}
                       onChangeText={handleChange('bhk')}
                       onBlur={handleBlur('bhk')}
@@ -719,6 +723,7 @@ const AddPropertyScreen = ({ navigation }) => {
                       <TextInput
                         style={[styles.input, styles.inputRowItem]}
                         placeholder="e.g., 1200"
+                        placeholderTextColor="#888"
                         value={values.areaValue}
                         onChangeText={handleChange('areaValue')}
                         onBlur={handleBlur('areaValue')}
@@ -847,6 +852,7 @@ const AddPropertyScreen = ({ navigation }) => {
                       <TextInput
                   style={styles.input}
                   placeholder="Your Name"
+                  placeholderTextColor="#888"
                   value={values.contactInfo.name}
                   onChangeText={(value) => setFieldValue('contactInfo.name', value)}
                   onBlur={handleBlur('contactInfo.name')}
@@ -860,6 +866,7 @@ const AddPropertyScreen = ({ navigation }) => {
                 <TextInput
                   style={styles.input}
                   placeholder="Your Phone Number"
+                  placeholderTextColor="#888"
                   value={values.contactInfo.phone}
                   onChangeText={(value) => setFieldValue('contactInfo.phone', value)}
                   onBlur={handleBlur('contactInfo.phone')}
@@ -874,6 +881,7 @@ const AddPropertyScreen = ({ navigation }) => {
                 <TextInput
                   style={styles.input}
                   placeholder="Your Email"
+                  placeholderTextColor="#888"
                   value={values.contactInfo.email}
                   onChangeText={(value) => setFieldValue('contactInfo.email', value)}
                   onBlur={handleBlur('contactInfo.email')}

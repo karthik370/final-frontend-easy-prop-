@@ -125,6 +125,7 @@ const RegisterScreen = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="Full Name"
+              placeholderTextColor="#888"
               value={name}
               onChangeText={setName}
               onBlur={validateName}
@@ -137,6 +138,7 @@ const RegisterScreen = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="Email Address"
+              placeholderTextColor="#888"
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
@@ -151,6 +153,7 @@ const RegisterScreen = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="Phone Number"
+              placeholderTextColor="#888"
               keyboardType="phone-pad"
               value={phone}
               onChangeText={setPhone}
@@ -164,6 +167,7 @@ const RegisterScreen = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="Password"
+              placeholderTextColor="#888"
               secureTextEntry={!showPassword}
               value={password}
               onChangeText={setPassword}
@@ -184,6 +188,7 @@ const RegisterScreen = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="Confirm Password"
+              placeholderTextColor="#888"
               secureTextEntry={!showConfirmPassword}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
@@ -271,6 +276,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingRight: 10,
     fontSize: 16,
+    color: '#333',
   },
   eyeIcon: {
     paddingHorizontal: 10,

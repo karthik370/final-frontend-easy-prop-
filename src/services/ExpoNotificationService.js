@@ -184,6 +184,16 @@ class ExpoNotificationService {
     });
   }
 
+  // New reliable registration function
+  async registerPushToken() {
+    const userToken = await AsyncStorage.getItem('userToken');
+    if (!userToken) {
+      console.log('No user token found, skipping push token registration');
+      return;
+    }
+    await this.registerForPushNotifications(userToken);
+  }
+
   // Register for push notifications and return the token
   async registerForPushNotifications(userToken) {
     if (!Device.isDevice) {

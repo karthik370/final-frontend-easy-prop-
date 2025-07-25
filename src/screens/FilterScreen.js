@@ -157,6 +157,7 @@ const FilterScreen = ({ route, navigation }) => {
                   value={minPrice}
                   onChangeText={setMinPrice}
                   placeholder="0"
+                  placeholderTextColor="#888"
                   keyboardType="numeric"
                 />
               </View>
@@ -171,6 +172,7 @@ const FilterScreen = ({ route, navigation }) => {
                   value={maxPrice}
                   onChangeText={setMaxPrice}
                   placeholder="Any"
+                  placeholderTextColor="#888"
                   keyboardType="numeric"
                 />
               </View>
@@ -240,6 +242,7 @@ const FilterScreen = ({ route, navigation }) => {
               value={city}
               onChangeText={setCity}
               placeholder="Enter city name"
+              placeholderTextColor="#888"
             />
           </View>
         </View>
